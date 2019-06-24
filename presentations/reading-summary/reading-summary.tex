@@ -1,0 +1,310 @@
+\documentclass[aspectratio=169,compress]{beamer}
+
+\newcommand{\dcrdt}{\text{$\delta$-CRDT}}
+
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{bookmark}
+
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+
+\usetheme{Copenhagen}
+\setbeamercovered{transparent}
+
+\usepackage[backend=biber,style=authoryear,sorting=ynt,natbib=true]{biblatex}
+\addbibresource{reading-summary.bib}
+
+\title{CRDT reading survey}
+\author{Taylor Blau}
+\institute{University of Washington}
+\date{June, 2019}
+
+\begin{document}
+  \frame{\titlepage}
+
+  \begin{frame}
+    \frametitle{CRDT overview}
+
+    A \textit{Conflict-free replicated data type} (hereafter, CRDT) is a (1)
+    datatype and (2) replication strategy for ensuring that multiple,
+    independent, and uncoordinated actors can converge on a shared value.
+
+    \vspace{1em}
+
+    Two broad classes of specification:
+    \begin{description}
+      \item[State-based] Each message is an element in a \textit{monotone join
+        semi-lattice} of the possible state-space; replicas define $\sqcup$ to
+        take in new states.
+      \item[Op-based] Each message is either an idempotent \textit{query} or a
+        mutative
+    \end{description}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based CRDT}
+
+    Given a state-space $\mathcal{S}$, a state-based CRDT $\mathcal{P}$ is
+    defined~\parencite{shapiro11}:
+
+    \[
+      \mathcal{P} = (S, s^0, q, u, m)
+    \]
+    where:
+    \begin{description}
+      \item[$S$] the set of all possible states; i.e., that $s^{(t)} \in S$.
+      \item[$s^{(0)}$] the initial state.
+      \item[$q$] a non-modifying query method.
+      \item[$u$] a modifying update method.
+      \item[$m$] a \textit{commutative} $\sqcup$ merge operation.
+    \end{description}
+
+    \vspace{1em}
+
+    Note that $S$ in fact must form a join semi-lattice; i.e., that if $s, s'
+    \in \mathcal{S}$, that:
+    \[
+      s \sqsubseteq s \sqcup s',\quad s' \sqsubseteq s \sqcup s'
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based CRDT}
+
+    Several properties of the lattice $\mathcal{S}$ are exploited to produce an
+    appealingly weak set of requirements:
+    \begin{enumerate}
+      \item A commutative $\sqcup$ allows messages to be delivered out-of-order.
+      \item An idempotent $\sqcup$ allows messages to be duplicated.
+    \end{enumerate}
+
+    With an appropriate choice of anti-entropy algorithm (e.g., one that gossips
+    with other replicas infinitely often), then replicas are guaranteed to
+    converge even when messages may be dropped~\citep{shapiro11}.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based CRDT example}
+
+    We present the \textit{G-Counter} (read: ``grow-only counter''), which is a
+    CRDT implemented as follows~\citep{almeida16}:
+    \[
+      \mathcal{P} = \left\{\begin{aligned}
+        S &= \mathcal{I} \times \mathbb{N} \\
+        s^{(0)} &= \left\{ \right\} \\
+        q &= \sum_{j \in \mathcal{I}} m(j) \\
+        u &= m\left\{ i \mapsto m(i) + 1 \right\} \\
+        s \sqcup s' &= \left\{ j \mapsto \max(s(j), s'(j)) : j \in \text{dom}(s)
+        \cup \text{dom}(s') \right\} \\
+      \end{aligned}\right.
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based CRDT example}
+
+    \begin{itemize}
+      \item In English, the state-based G-Counter maintains a mapping from host
+        identifier to counter value, and answers queries regarding the value of
+        the counter as the sum of all of the partial counters.
+      \item The state payload can naturally ``drop'' messages, since a sup.
+        element in the lattice can easily take its place.
+        \begin{itemize}
+          \item But, CRDT \textit{composition} can make individual states large
+            and complex, leading to as-large payloads, which can be expensive to
+            serialize/send/apply/etc.
+        \end{itemize}
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{op-based CRDT}
+
+    Given a state-space $\mathcal{S}$, an op-based CRDT $\mathcal{P}$ is
+    defined~\parencite{shapiro11}:
+
+    \[
+      \mathcal{P} = (S, s^0, q, t, u)
+    \]
+    where $S$, $s^0$, and $q$ are the same as in the state-based CRDT, and:
+    \begin{description}
+      \item[$t$] a non-modifying \textit{prepare-update} method.
+      \item[$u$] a modifying \textit{effect-update} method.
+    \end{description}
+
+    \[
+      \begin{aligned}
+        t &: \mathcal{S} \to (\mathcal{S} \to \mathcal{S}) \\
+        u &: (\mathcal{S} \to \mathcal{S}) \to \mathcal{S} \to \mathcal{S} \\
+      \end{aligned}
+    \]
+
+    on some operation $\sigma$, $t$ is run immediately at the replica executing
+    $\sigma$, and the resulting effector is applied with $u$ immediately
+    thereafter.
+
+    That same effector is then applied at all other replicas by $u$.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{op-based CRDT}
+
+    The op-based CRDT has stronger requirements that must be met in order to
+    guarantee consistency~\citep{shapiro11} These are a result of a lack of a
+    merge method, and thus operations need not (and often don't) form a
+    semi-lattice.
+
+    \begin{enumerate}
+      \item Operations must be delivered in order.
+      \item Operations must not be dropped, lest the entire system be halted.
+      \item Operations must be delivered exactly once (or tagged and applied
+        exactly once).
+    \end{enumerate}
+
+    CRDTs run over a TCP/IP implementation can thusly satisfy the above
+    requirements.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{op-based CRDT example}
+
+    We now give a novel example of the op-based G-Counter. The definition is not
+    quite as natural as the state-based one above, but is an example of the
+    simulate-ability of the two.
+
+    \[
+      \mathcal{P} = \left\{\begin{aligned}
+        S &= \mathcal{I} \times \mathbb{N} \\
+        s^{(0)} &= \left\{ \right\} \\
+        q &= \sum_{j \in \mathcal{I}} m(j) \\
+        t &= \lambda p.\; p.m\left\{i \mapsto p.m(i) + 1 \right\} \\
+        u(f) &= f(m)
+      \end{aligned}\right.
+    \]
+
+    $t$ is a higher-order function that takes a CRDT instance $p$ and increments
+    the partial-counter associated with its own ID. $u$ simply applies that
+    function locally.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{$\delta$-CRDT \& semi-lattice interaction}
+
+    In the state-based CRDT example, we note that CRDT programs are sending far
+    more data than is involved in their operation:
+    \[
+      u = m\left\{ i \mapsto m(i) + 1 \right\}
+    \]
+    where it would \textit{also} be sufficient to simply send:
+    \[
+      u = \left\{ i \mapsto m(i) + 1 \right\}
+    \]
+    where other entries are assumed to have values of $-\infty$. This idea is
+    due to \cite{almeida16}. Then,
+    \[
+      \begin{aligned}
+        u_i(X) &= X \sqcup u_i^\delta(X) \\
+        m\left\{ i \mapsto m(i) + 1 \right\} &= m \sqcup \left\{ i \mapsto m(i) + 1 \right\}
+      \end{aligned}
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{$\delta$-CRDT \& semi-lattice interaction}
+
+    The idea of applying \textit{$\delta$-mutators} originates
+    in~\cite{almeida16}, and is motivated by:
+    \begin{enumerate}
+      \item $\delta$ states \textit{are} just states; they are merely not quite
+        the states you would expect to have.
+      \item Several $\delta$ states can be grouped into a
+        \textit{$\Delta$-group} and applied efficiently and with fewer overall
+        messages.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{$\delta$-CRDT \& semi-lattice interaction}
+
+    Because $\delta$ updates are just states, CRDT programs follow the
+    state-based approach and define a commutative and idempotent $\sqcup$ merge
+    operation over that lattice and retain \textbf{all of the benefits} of
+    the state-based approach \textbf{without the payload size burden}.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Consistency types}
+
+    \begin{description}
+      \item[Eventual consistency] An update delivered to one (correct) replica
+        is eventually delivered to all replicas~\citep{shapiro11}.
+      \item[Strong eventual consistency] (correct) replicas delivered the same
+        sequence of updates (eventually) show the same state~\citep{shapiro11}.
+      \item[Causal consistency] TODO
+    \end{description}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Consistency results}
+
+    \begin{table}
+      \begin{tabular}{rcccccccc}
+        & \multicolumn{3}{c}{EC}
+        & \multicolumn{3}{c}{SEC}
+        & \multicolumn{1}{c}{SC} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-8}
+          & state- & op- & $\delta$-
+          & state- & op- & $\delta$-
+          & $\delta$- \\
+        \midrule
+          \cite{shapiro11} & - & - & & \cmark & \cmark & & \\
+          \cite{almeida16} & & & - & & & \cmark & \cmark   \\
+          \cite{gomes17} & & - & & & \cmark\footnotemark[1] & & \\
+          \cite{zeller14} & - & & & \cmark\footnotemark[2] & & & \\
+      \end{tabular}
+      \footnotetext[1]{Mechanized proof.}
+      \footnotetext[2]{Mechanized proof; focused on behavioral aspects.}
+    \end{table}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Other results from~\cite{shapiro11}}
+    \begin{enumerate}
+      \item op- and state-based CRDTs can simulate each other.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Other results from~\cite{almeida16}}
+    \begin{enumerate}
+      \item $\delta$-CRDTs correspond in execution to state-based CRDTs.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Other results from~\cite{gomes17}}
+    \begin{enumerate}
+      \item TODO
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Other results from~\cite{zeller14}}
+    \begin{enumerate}
+      \item TODO
+    \end{enumerate}
+  \end{frame}
+
+    % \begin{description}
+    %   \item[State-based] The \textit{state-based} CRDT gossips its entire state
+    %     as a payload to other CRDTs.
+    %   \item[Op-based] The \textit{op-based} CRDT sends an \textit{effector}
+    %     (representing a possibly-mutable operation) to be executed synchronously
+    %     at each downstream replica.
+    %   \item[$\delta$-based] The \dcrdt gossips the state
+    % \end{description}
+  \begin{frame}
+    \printbibliography
+  \end{frame}
+\end{document}
