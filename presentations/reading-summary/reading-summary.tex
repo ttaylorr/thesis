@@ -241,7 +241,9 @@
         is eventually delivered to all replicas~\citep{shapiro11}.
       \item[Strong eventual consistency] (correct) replicas delivered the same
         sequence of updates (eventually) show the same state~\citep{shapiro11}.
-      \item[Causal consistency] TODO
+      \item[Causal consistency] The causal happens-before relation on operations
+        is retained (i.e., maintenance of the visibility
+        relation)~\citep{almeida16}.
     \end{description}
   \end{frame}
 
@@ -271,39 +273,54 @@
   \begin{frame}
     \frametitle{Other results from~\cite{shapiro11}}
     \begin{enumerate}
+      \item Seminal paper which presents the first formalization of the state-
+        and op-based CRDT models.
       \item op- and state-based CRDTs can simulate each other.
+      \item ``Solves'' (in their own words) the CAP theorem without a need to
+        solve consensus.
+      \item Shows the SEC is incomparable to sequential consistency.
+      \item Shows an implementation of a directed graph CRDT.
     \end{enumerate}
   \end{frame}
 
   \begin{frame}
     \frametitle{Other results from~\cite{almeida16}}
     \begin{enumerate}
+      \item Original paper to present $\delta$-CRDTs, in which payloads do not
+        necessairly belong to the same lattice structure as the interrnal state
+        of the CRDT.
       \item $\delta$-CRDTs correspond in execution to state-based CRDTs.
+      \item $\Delta$ groups, and algorithms which use $\Delta$ groups in
+        \textit{ranges of the event trace} to guarantee causal consistency.
+      \item Portfolio of $\delta$-CRDTs, including GSet, 2PSet, PNCounter,
+        Lexicographic Counter etc.
+      \item Causal $\delta$-CRDTs, dot stores, etc.
     \end{enumerate}
   \end{frame}
 
   \begin{frame}
     \frametitle{Other results from~\cite{gomes17}}
     \begin{enumerate}
-      \item TODO
+      \item Isabelle/HOL theories about network model, causality, order
+        dependence, and so on to build a foundational proof about the
+        convergence of op-based CRDTs.
+      \item Mechanized proofs for Replicated Growable Array, OR-set, and
+        G-counter.
+      \item Elegant formalization of Strong Eventual Consistency missing from
+        previous literature.
+      \item Adequate consideration of \textit{progress} in distributed systems
+        in this setting.
     \end{enumerate}
   \end{frame}
 
   \begin{frame}
     \frametitle{Other results from~\cite{zeller14}}
     \begin{enumerate}
-      \item TODO
+      \item Isabelle/HOL theories about state-baesd CRDTs parameterized by the
+        CRDT under verification, foucsd on the \textit{behavior} of that CRDT.
     \end{enumerate}
   \end{frame}
 
-    % \begin{description}
-    %   \item[State-based] The \textit{state-based} CRDT gossips its entire state
-    %     as a payload to other CRDTs.
-    %   \item[Op-based] The \textit{op-based} CRDT sends an \textit{effector}
-    %     (representing a possibly-mutable operation) to be executed synchronously
-    %     at each downstream replica.
-    %   \item[$\delta$-based] The \dcrdt gossips the state
-    % \end{description}
   \begin{frame}
     \printbibliography
   \end{frame}
