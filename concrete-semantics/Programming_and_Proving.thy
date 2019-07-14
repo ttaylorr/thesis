@@ -60,4 +60,52 @@ lemma sum_euler : "sum_upto n = n * (n + 1) div 2"
    apply (auto)
   done
 
+(* Exercise 2.6 *)
+datatype 'a tree = Tip | Node "'a tree" 'a "'a tree"
+
+fun contents :: "'a tree \<Rightarrow> 'a list" where
+"contents Tip = []" |
+"contents (Node l x r) = x # (contents l) @ (contents r)"
+
+fun sum_tree :: "nat tree \<Rightarrow> nat" where
+"sum_tree Tip = 0" |
+"sum_tree (Node l n r) = n + (sum_tree l) + (sum_tree r)"
+
+lemma sum_tree_list_equiv : "sum_tree t = sum_list (contents t)"
+  apply (induction t)
+   apply (auto)
+  done
+
+(* Exercise 2.7 *)
+datatype 'a tree2 = Tip "'a" | Node "'a tree2" "'a" "'a tree2"
+
+fun mirror2 :: "'a tree2 \<Rightarrow> 'a tree2" where
+"mirror2 (Tip x) = (Tip x)" |
+"mirror2 (Node l x r) = (Node (mirror2 r) x (mirror2 l))"
+
+fun pre_order :: "'a tree2 \<Rightarrow> 'a list" where
+"pre_order (Tip n) = n # []" |
+"pre_order (Node l n r) = n # (pre_order l) @ (pre_order r)"
+
+fun post_order :: "'a tree2 \<Rightarrow> 'a list" where
+"post_order (Tip n) = n # []" |
+"post_order (Node l n r) = (post_order l) @ (post_order r) @ [n]"
+
+lemma order_pre_post : "pre_order (mirror2 t) = rev (post_order t)"
+  apply (induction t)
+   apply (auto)
+  done
+
+(* Exercise 2.8 *)
+fun intersperse :: "'a \<Rightarrow> 'a list \<Rightarrow> 'a list"  where
+"intersperse a [] = []" |
+"intersperse a (x # []) = [x]" |
+"intersperse a (x # xs) = x # [a] @ (intersperse a xs)"
+
+(* note: must use intersperse's induction rule as above *)
+lemma map_intersperse : "map f (intersperse a xs) = intersperse (f a) (map f xs)"
+  apply (induction xs rule: intersperse.induct)
+    apply (auto)
+  done
+
 end
