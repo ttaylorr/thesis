@@ -8,6 +8,10 @@ value "1 + (2::int)"
 value "1 - (2::nat)"
 value "1 - (2::int)"
 
+fun add :: "nat \<Rightarrow> nat \<Rightarrow> nat"  where
+"add 0 n = n" |
+"add (Suc m) n = Suc (add m n)"
+
 (* Exercise 2.2 *)
 lemma add_assoc : "(x::nat) + (y + z) = (x + y) + z"
   apply(induction x)
@@ -17,6 +21,11 @@ lemma add_assoc : "(x::nat) + (y + z) = (x + y) + z"
 lemma add_commut : "(x::nat) + y = y + x"
   apply(induction x)
    apply(auto)
+  done
+
+lemma add_mSn_Smn : "add m (Suc n) = add (Suc m) n"
+  apply (induction m)
+   apply (auto)
   done
 
 (* Exercise 2.3 *)
@@ -108,4 +117,29 @@ lemma map_intersperse : "map f (intersperse a xs) = intersperse (f a) (map f xs)
     apply (auto)
   done
 
-end
+(* Exercise 2.9 *)
+fun itadd :: "nat \<Rightarrow> nat \<Rightarrow> nat"  where
+"itadd 0 n = n" |
+"itadd (Suc m) n = itadd m (Suc n)"
+
+theorem add_itadd: "itadd m n = add m n"
+  apply (induction m arbitrary: n)
+   apply (auto)
+   apply (simp add: add_mSn_Smn)
+  done
+
+datatype tree0 = Tip | Node "tree0" "tree0"
+
+fun nodes :: "tree0 \<Rightarrow> nat" where
+"nodes Tip = 1" |
+"nodes (Node l r) = 1 + (nodes l) + (nodes r)"
+
+fun explode :: "nat \<Rightarrow> tree0 \<Rightarrow> tree0"  where
+"explode 0 t = t" |
+"explode (Suc n) t = explode n (Node t t)"
+
+lemma "nodes(explode n t) = (2 ^ n) * (nodes t + 1) - 1"
+  apply (induction n arbitrary: t)
+  apply (auto)
+  apply (simp add: algebra_simps)
+  done
