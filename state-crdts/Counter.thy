@@ -21,8 +21,6 @@ fun counter_op :: "operation \<Rightarrow> int \<rightharpoonup> int" where
   "counter_op Increment x = Some (x + 1)" |
   "counter_op Decrement x = Some (x - 1)"
   
-export_code Increment counter_op in OCaml file "ocaml/counter.ml"
-
 locale counter = network_with_ops _ counter_op 0
 
 lemma (in counter) "counter_op x \<rhd> counter_op y = counter_op y \<rhd> counter_op x"
