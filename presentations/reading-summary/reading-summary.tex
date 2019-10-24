@@ -18,10 +18,42 @@
 \title{CRDT reading survey}
 \author{Taylor Blau}
 \institute{University of Washington}
-\date{June, 2019}
+\date{November, 2019}
 
 \begin{document}
   \frame{\titlepage}
+
+  \begin{frame}
+    \frametitle{Shared/coordinated computation}
+
+    Shared computation requires coordination between otherwise independent units
+    of that computation in order to achieve \textit{consensus}. Traditionally,
+    this might mean at least one of:
+
+    \begin{itemize}
+      \item A consensus algorithm, like Paxos or Raft.
+      \item Reliable broadcast, where a load-balancer proxies requests to
+        multiple nodes in a system.
+      \item Leader-follower(s) architecture, with leader election.
+      \item Atomic commit.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Replicated data-types}
+
+    Since~\cite{shapiro11}, Conflict-Free Replicated Datatypes are yet another
+    way to solve the coordinated computation problem. They fit when your problem
+    is shaped like:
+    \begin{enumerate}
+      \item (Optionally) weak network guarantees; there exist formulations that
+        are appropriate for weak and strong networks, more on this later.
+      \item Want to tolerate node failure.
+      \item Cannot tolerate coordination lag (i.e., nodes should be able to
+        operate independently of one another, no load balancers required).
+      \item Can tolerate temporary divergence.
+    \end{enumerate}
+  \end{frame}
 
   \begin{frame}
     \frametitle{CRDT overview}
