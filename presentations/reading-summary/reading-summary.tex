@@ -69,6 +69,10 @@
       \item[State-based] Each message is an element in a \textit{monotone join
         semi-lattice} of the possible state-space; replicas define $\sqcup$ to
         take in new states.
+        \begin{enumerate}
+          \item We will later consider the case where the messages cover a
+            subset of the sender's lattice, these are called $\delta$-CRDTs.
+        \end{enumerate}
       \item[Op-based] Each message is either an idempotent \textit{query} or a
         mutative
     \end{description}
