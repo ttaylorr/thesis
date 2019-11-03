@@ -28,8 +28,13 @@ fun gcounter_op :: "('id operation) \<Rightarrow> ('id state) \<rightharpoonup> 
 
 locale gcounter = network_with_ops _ gcounter_op "\<lambda> x. None"
 
-lemma (in gcounter) "gcounter_op x \<rhd> gcounter_op y = gcounter_op y \<rhd> gcounter_op x"
+lemma (in gcounter) option_max_assoc: "option_max a (option_max b c) = option_max b (option_max a c)"
+  apply (induction a)
   sorry
+
+lemma (in gcounter) "gcounter_op x \<rhd> gcounter_op y = gcounter_op y \<rhd> gcounter_op x"
+  apply (auto simp add: kleisli_def option_max_assoc)
+  done
 
 lemma (in gcounter) concurrent_operations_commute:
   assumes "xs prefix of i"
