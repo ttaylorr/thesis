@@ -28,12 +28,20 @@ fun gcounter_op :: "('id operation) \<Rightarrow> ('id state) \<rightharpoonup> 
 
 locale gcounter = network_with_ops _ gcounter_op "\<lambda> x. None"
 
-lemma (in gcounter) option_max_assoc: "option_max a (option_max b c) = option_max b (option_max a c)"
-  apply (induction a)
-  sorry
+lemma (in gcounter) option_max_assoc:
+  "option_max a (option_max b c) = option_max (option_max a b) c"
+  apply (induction a; induction b; induction c)
+  apply (auto)
+  done
+
+lemma (in gcounter) option_max_commut: "option_max a b = option_max b a"
+  apply (induction a; induction b)
+  apply (auto)
+  done
 
 lemma (in gcounter) "gcounter_op x \<rhd> gcounter_op y = gcounter_op y \<rhd> gcounter_op x"
   apply (auto simp add: kleisli_def option_max_assoc)
+  apply (simp add: option_max_commut)
   done
 
 lemma (in gcounter) concurrent_operations_commute:
