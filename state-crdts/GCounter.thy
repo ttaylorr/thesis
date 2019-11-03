@@ -8,10 +8,9 @@ type_synonym ('id) state = "'id \<Rightarrow> int option"
 type_synonym ('id) operation = "'id state"
 
 fun option_max :: "int option \<Rightarrow> int option \<Rightarrow> int option"  where
-"option_max (Some x) (Some y) = Some (max x y)" |
-"option_max (Some x) None = Some x" | 
-"option_max None (Some y) = Some y" | 
-"option_max None None = None"
+"option_max (Some a) (Some b) = Some (max a b)" |
+"option_max x None = x" |
+"option_max None y = y"
 
 fun update :: "'id state => 'id => (int => int) => ('id operation)" where
   "update x i fn = (case (x i) of
