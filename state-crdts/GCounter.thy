@@ -39,7 +39,7 @@ lemma (in gcounter) option_max_commut: "option_max a b = option_max b a"
   apply (auto)
   done
 
-lemma (in gcounter) "gcounter_op x \<rhd> gcounter_op y = gcounter_op y \<rhd> gcounter_op x"
+lemma (in gcounter) [simp] : "gcounter_op x \<rhd> gcounter_op y = gcounter_op y \<rhd> gcounter_op x"
   apply (auto simp add: kleisli_def option_max_assoc)
   apply (simp add: option_max_commut)
   done
@@ -48,8 +48,10 @@ lemma (in gcounter) concurrent_operations_commute:
   assumes "xs prefix of i"
   shows "hb.concurrent_ops_commute (node_deliver_messages xs)"
   using assms
-  sorry
-  
+  apply(clarsimp simp: hb.concurrent_ops_commute_def)
+  apply(unfold interp_msg_def, simp)
+  done
+
 corollary (in gcounter) counter_convergence:
   assumes "set (node_deliver_messages xs) = set (node_deliver_messages ys)"
       and "xs prefix of i"
