@@ -1,1 +1,20 @@
 \chapter{Abstract}
+
+Conflict-free replicated data types (CRDTs) are a natural structure with which
+to communication information about a shared computation in a distributed setting
+where coordination overhead may not be tolerated, and individual participants
+are allowed to temporarily diverge from the overall computation.  Within this
+setting, there are two classical approaches: state- and operation-based CRDTs.
+The former define a commutative, associative, and idempotent \textit{join}
+operation, and their states a \textit{monotone join semi-lattice}. The latter
+communicate \textit{operations}, the join of which is non-idempotent. Whereas
+op-based CRDTs require little information to be exchanged, they demand
+relatively strong network guarantees (exactly-once, in-order delivery), and
+state-based CRDTs suffer the opposite problem. Both satisfy \textit{strong,
+eventual consistency} (SEC)
+
+We posit that $\delta$-CRDTs both (1) require minimal communication overhead
+from payload size, and (2) tolerate relatively weak network environments, making
+them an ideal candidate for real-world use of CRDTs. We present here a
+mechanized proof that $\delta$-CRDTs do achieve SEC, even under relatively weak
+network guarantees.
