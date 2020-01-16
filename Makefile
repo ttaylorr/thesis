@@ -2,6 +2,8 @@
 
 thesis.pdf : thesis.tex abstract.tex title.tex thesis.cls
 	pdflatex -shell-escape $^
+	bibtex $(patsubst %.tex,%,$<)
+	pdflatex -output-directory $(dir $@) $<
 
 %.pdf : %.tex
 	pdflatex -output-directory $(dir $@) $<

@@ -1,6 +1,9 @@
 *~
 
 *.aux
+*.bbg
+*.bbl
+*.blg
 *.log
 *.pdf
 *.toc
