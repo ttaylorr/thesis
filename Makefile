@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := thesis.pdf
 
-thesis.pdf : thesis.tex abstract.tex title.tex thesis.cls
+thesis.pdf : thesis.tex abstract.tex introduction.tex title.tex thesis.cls
 	pdflatex -shell-escape $^
 	bibtex $(patsubst %.tex,%,$<)
 	pdflatex -output-directory $(dir $@) $<

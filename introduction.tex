@@ -1,0 +1,48 @@
+\chapter{Introduction}
+
+Computational systems today are larger than ever. Whereas previously one would
+architect their programs to be run on a single system, it is now commonplace to
+design programs that share computation across multiple machines which
+communicate with each other in a coordinated fashion. It is natural, therefore,
+to ask why one might design from the latter perspective rather than the former.
+The answer is threefold:
+\begin{enumerate}
+  \item Resiliency. Designing a computational workload to be distributed amongst
+    participants tolerates the failure of any one (or more) of those
+    participants.
+  \item Scalability. When designed from a distributed standpoint, ``scaling''
+    your workload to meet a higher demand is reduced to adding additional
+    hardware, not designing more efficient ways to do the computation.
+  \item Locality. By sharing a computation across many individual pieces of
+    hardware, system designers are able to place hardware closer to the site at
+    which their requests originate. If the network between a user and some
+    system is comparatively slow relative to the internal communication between
+    hardware servicing that request, then hardware can be distributed closer to
+    the user to reduce the overall latency in responding to a request.
+\end{enumerate}
+
+So, it is clear that as our demand on such computations grows, that it so too
+must our need to design these systems in a way that considers resiliency,
+scalability, and locality first.
+
+In order to design systems in this way, however, one must consider additionally
+the challenges imposed by not having access to shared memory amongst
+participants in the computation. If a program runs in a single-threaded fashion
+on a single computer, there is no need to coordinate memory accesses, since only
+one part of the program may be reading or writing memory at a given time. If the
+program is written to be multi-threaded, then the threads must coordinate
+amongst themselves by using mutexes or communication channels to avoid
+\textit{race conditions}.
+
+The same challenge exists wben a system is distributed at the hardware and
+machine level, rather than amongst multiple threads running on a single piece of
+hardware. The challenge, however, is made more difficult by the fact that the
+communication overhead is far higher between separate pieces of hardware than
+between two threads.
+
+Our discussion here focuses on a particular class of datatypes that are designed
+to be both easily distributed and require relatively low coordination overhead
+by allowing individual participants to diverge temporarily from the state of the
+overall computation\footnote{That is, the computation reflects a different
+value depending on which participant in the computation responds to the
+request.
