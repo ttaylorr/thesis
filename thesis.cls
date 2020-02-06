@@ -11,6 +11,8 @@
 
 \bibliographystyle{unsrt}
 
+\newtheorem{definition}{Definition}[chapter]
+
 \makeatletter
 \def\@maketitle{%
   \newpage

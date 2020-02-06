@@ -40,9 +40,91 @@ hardware. The challenge, however, is made more difficult by the fact that the
 communication overhead is far higher between separate pieces of hardware than
 between two threads.
 
+\section{Preliminaries}
+
 Our discussion here focuses on a particular class of datatypes that are designed
 to be both easily distributed and require relatively low coordination overhead
 by allowing individual participants to diverge temporarily from the state of the
 overall computation\footnote{That is, the computation reflects a different
 value depending on which participant in the computation responds to the
-request.
+request}.
+
+These datatypes operate in such a way so as to both avoid conflict between
+concurrent updates, and to avoid locking and coordination overhead. These
+datatypes are referred to as conflict-free replicated datatypes, hereafter,
+CRDTs~\citep{shapiro11}. CRDTs are said to achieve \textit{strong eventual
+consistency} (SEC) which is to say that they achieve a stronger form of eventual
+consistency. We summarize the definitions of eventual- and strong-eventual
+consistency from~\cite{shapiro11}.
+
+\begin{definition}[Eventual Consistency]
+  A replicated datatype is \textit{eventually consistent} if:
+  \begin{itemize}
+    \item Updates delivered to it are eventually delivered to all other replicas
+      in the system.
+    \item All well-behaved replicas that have received the same set of updates
+      eventually reflect the same state.
+    \item All executions on this datatype are terminating.
+  \end{itemize}
+\end{definition}
+
+\begin{definition}[Strong Eventual Consistency]
+  A replicated datatype is \textit{strong eventually consistent} if:
+  \begin{itemize}
+    \item It is eventually consistent, as above.
+    \item Convergence occurs immediately, that is, any two replicas that have
+      received the same set of updates \textit{always} reflect the same state.
+  \end{itemize}
+\end{definition}
+
+There are two broad classes of replicated datatypes that achieve strong eventual
+consistency through two different mechanisms. The first is called
+\textit{state-based} and forms a \textit{lattice} of possible states, where two
+states are \textit{joined} together by a join operation defined over that
+lattice. The latter is called \textit{operation-} (or \textit{op-})
+\textit{based}, and relies on strong message delivery guarantees over a shared
+communication channels to communicate updates in such a way that nodes receiving
+those updates are guaranteed to execute them identically, so that all
+participants in this fashion also reflect the same state. We consider each of
+these two kinds in turn:
+
+\subsection{state-based CRDTs}
+A CRDT is state-based when the information shared between multiple participants
+within the system is \textit{state-centric}; that is, when members of the system
+use the announcement of their internal state to drive the system forward towards
+the strong form of eventual consistency.
+
+Specifically, a state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$, where $S$ is
+the lattice of all possible states, $s^0 \in S$ is the initial state, and $q$,
+$u$, $m$ are the query, update, and merge functions~\citep{shapiro11}.
+\textit{Querying} a state-based CRDT returns the internal state of that CRDT at
+the time it was queried. \textit{Updating} a CRDT updates its internal state to
+be some new value, where the kind of update is specific to the particular CRDT.
+Finally, \textit{merging} is done when a CRDT wishes to incorporate updates from
+some other CRDT into its internal state, so that it might be reflected by a
+subsequent query.
+
+We now devote our attention to the \textit{join semi-lattice} $S$ which makes up
+all of the possible states reachable in any execution of the CRDT, and which is
+central to an understanding of the state-based CRDT's convergence properties.
+The semi-lattice $S$ is a partial ordering $\leq$ of all possible states, where
+each pair of states has a \textit{least upper-bound} $\sqcup$:
+\[
+  s = s' \sqcup s'',\quad \mathrm{if}~
+    s', s'' \leq s~\mathrm{and}~
+    s = \min_{s', s'' \leq s'''} s'''
+\]
+Recall also that a partial ordering $\leq$ has the following properties, which
+are near those of an equivalence class (but do not in practice form an
+equivalence class, since partial orderings are antisymmetric):
+\begin{description}
+  \item[Reflexivity] For all $s \in S$, $s \leq s$.
+  \item[Antisymmetry] For all $s, s' \in S$, if $s \leq s'$ and $s' \leq s$,
+    then $s = s'$.
+  \item[Transitivity] For all $s, s', s'' \in S$, if $s \leq s'$ and $s' \leq
+    s''$, then $s \leq s''$.
+\end{description}
+
+% We now illustrate the above conventions by summarizing summarize
+
+\subsection{op-based CRDTs}
