@@ -10,7 +10,13 @@ SECTIONS += title.tex
 FIGURES =
 FIGURES += figures/1/semi-lattice.pdf
 
-thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES)
+ISABELLE ?= /Applications/Isabelle2019.app/Isabelle/bin/isabelle
+ISABELLE_STY = comment.sty isabelle.sty isabellesym.sty pdfsetup.sty railsetup.sty
+
+$(ISABELLE_STY) :
+	$(ISABELLE) latex -o sty
+
+thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
 	pdflatex -shell-escape $^
 	bibtex $(patsubst %.tex,%,$<)
 	pdflatex -output-directory $(dir $@) $<
@@ -20,4 +26,4 @@ thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES)
 
 .PHONY : clean
 clean:
-	$(RM) -rf *.aux *.log *.pdf *.pyc *.toc *.out
+	$(RM) -rf *.aux *.log *.pdf *.pyc *.toc *.out $(ISABELLE_STY)

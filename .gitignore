@@ -9,3 +9,9 @@
 *.toc
 
 **/#*#
+
+comment.sty
+isabelle.sty
+isabellesym.sty
+pdfsetup.sty
+railsetup.sty

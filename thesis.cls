@@ -8,6 +8,7 @@
 \RequirePackage{amssymb}
 \RequirePackage{amsthm}
 \RequirePackage[margin=1in]{geometry}
+\RequirePackage{isabelle}
 \RequirePackage[square,sort,comma,numbers]{natbib}
 \RequirePackage{float}
 \RequirePackage{graphicx}
