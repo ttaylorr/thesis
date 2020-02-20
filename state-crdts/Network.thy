@@ -299,18 +299,16 @@ lemma (in causal_network) hb_antisym:
   assumes "hb x y"
       and "hb y x"
   shows   "False"
-  sorry
-(*
   using assms proof(induction rule: hb.induct)
   fix m1 i m2  
   assume "hb m2 m1" and "Broadcast m1 \<sqsubset>\<^sup>i Broadcast m2"
   thus False
     apply - proof(erule hb_elim)
     show "\<And>ia. Broadcast m1 \<sqsubset>\<^sup>i Broadcast m2 \<Longrightarrow> Broadcast m2 \<sqsubset>\<^sup>ia Broadcast m1 \<Longrightarrow> False"
-      by(metis insert_subset local_order_carrier_closed node_total_order_irrefl node_total_order_trans)
+      using assms(1) assms(2) hb.intros(3) hb_irrefl by blast
   next
     show "\<And>ia. Broadcast m1 \<sqsubset>\<^sup>i Broadcast m2 \<Longrightarrow> Deliver m2 \<sqsubset>\<^sup>ia Broadcast m1 \<Longrightarrow> False"
-      by(metis broadcast_before_delivery insert_subset local_order_carrier_closed node_total_order_irrefl node_total_order_trans)
+      using assms(1) assms(2) hb.intros(3) hb_irrefl by blast
   next
     show "\<And>m2a. Broadcast m1 \<sqsubset>\<^sup>i Broadcast m2 \<Longrightarrow> hb m2 m2a \<Longrightarrow> hb m2a m1 \<Longrightarrow> False"
       using assms(1) assms(2) hb.intros(3) hb_irrefl by blast
@@ -322,7 +320,7 @@ next
   thus "False"
     apply - proof(erule hb_elim)
     show "\<And>ia. Deliver m1 \<sqsubset>\<^sup>i Broadcast m2 \<Longrightarrow> Broadcast m2 \<sqsubset>\<^sup>ia Broadcast m1 \<Longrightarrow> False"
-      by (metis broadcast_before_delivery insert_subset local_order_carrier_closed node_total_order_irrefl node_total_order_trans)
+      using assms(1) assms(2) hb.intros(3) hb_irrefl by blast
   next
     show "\<And>ia. Deliver m1 \<sqsubset>\<^sup>i Broadcast m2 \<Longrightarrow> Deliver m2 \<sqsubset>\<^sup>ia Broadcast m1 \<Longrightarrow> False"
       by (meson causal_network.causal_delivery causal_network_axioms hb.intros(2) hb.intros(3) insert_subset local_order_carrier_closed node_total_order_irrefl)
@@ -337,7 +335,6 @@ next
   thus "False"
     using hb.intros(3) by blast
 qed
-*)
 
 definition (in network) node_deliver_messages :: "'msg event list \<Rightarrow> 'msg list" where
   "node_deliver_messages cs \<equiv> List.map_filter (\<lambda>e. case e of Deliver m \<Rightarrow> Some m | _ \<Rightarrow> None) cs"
