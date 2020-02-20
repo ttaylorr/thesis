@@ -291,19 +291,9 @@ lemma (in causal_network) hb_broadcast_broadcast_order:
   shows "Broadcast m1 \<sqsubset>\<^sup>i Broadcast m2"
   using assms
   apply(induction rule: hb.induct)
-  sorry
-(*   apply(metis insertI1 local_order_carrier_closed network_axioms subsetCE)
-  apply(metis insert_subset local_order_carrier_closed
-        network.broadcast_before_delivery network_axioms node_total_order_trans)
-  apply(case_tac "Broadcast m2 \<in> set (history i)")
-  using node_total_order_trans apply blast
-  apply(subgoal_tac "Deliver m2 \<in> set (history i)")
-  apply(subgoal_tac "m1 \<noteq> m2 \<and> m2 \<noteq> m3")
-  apply(metis event.inject(1) hb.intros(1) hb_irrefl network.hb.intros(3) network_axioms
-        node_order_is_total hb_irrefl)
-  using hb_has_a_reason apply blast+
-done
- *)
+  using hb.intros(1) hb.intros(3) hb_irrefl node_order_is_total apply blast
+  apply (metis hb.intros(1) hb.intros(2) hb_irrefl network.hb.intros(3) network_axioms node_order_is_total)
+  by (metis event.inject(1) hb.intros(1) hb.intros(3) hb_irrefl node_order_is_total)
 
 lemma (in causal_network) hb_antisym:
   assumes "hb x y"
