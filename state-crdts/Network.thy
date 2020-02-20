@@ -33,7 +33,7 @@ locale node_histories =
 lemma (in node_histories) history_finite:
   shows "finite (set (history i))"
 by auto
-    
+                                                     
 definition (in node_histories) history_order :: "'evt \<Rightarrow> nat \<Rightarrow> 'evt \<Rightarrow> bool" ("_/ \<sqsubset>\<^sup>_/ _" [50,1000,50]50) where
   "x \<sqsubset>\<^sup>i z \<equiv> \<exists>xs ys zs. xs@x#ys@z#zs = history i"
 
@@ -250,17 +250,9 @@ lemma (in causal_network) hb_has_a_reason:
   shows "Deliver m1 \<in> set (history i) \<or> Broadcast m1 \<in> set (history i)"
   using assms
   apply(induction rule: hb.induct)
-sorry
-(*   apply(metis insert_subset local_order_carrier_closed network_axioms)
-  apply(metis insert_subset local_order_carrier_closed network_axioms)
-  apply(case_tac "Deliver m2 \<in> set (history i)")
-  apply(subgoal_tac "Deliver m1 \<in> set (history i)")
-  apply blast
-  using causal_delivery local_order_carrier_closed apply blast
-  apply(subgoal_tac "Broadcast m2 \<in> set (history i)")
-  apply blast+
-done
- *)
+  apply (meson causal_delivery deliver_locally hb.intros(1) insert_subset local_order_carrier_closed)
+  apply (meson causal_network.causal_broadcast causal_network_axioms deliver_locally insert_subset local_order_carrier_closed)
+  by (meson causal_delivery local_order_prefix_closed_last node_histories.events_before_exist node_histories.prefix_elem_to_carriers node_histories_axioms prefix_of_appendD)
 
 lemma (in causal_network) hb_cross_node_delivery:
   assumes "hb m1 m2"
