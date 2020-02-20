@@ -262,18 +262,9 @@ lemma (in causal_network) hb_cross_node_delivery:
   shows "Deliver m1 \<in> set (history j)"
   using assms
   apply(induction rule: hb.induct)
-sorry
-(*   apply(metis insert_subset local_order_carrier_closed)
-  apply(metis insert_subset local_order_carrier_closed network_axioms)
-  apply(case_tac "Deliver m2 \<in> set (history j)")
-  apply(subgoal_tac "Deliver m1 \<in> set (history j)")
-  apply blast
-  using broadcasts_unique hb.intros(3) hb_has_a_reason apply blast
-  apply(subgoal_tac "Broadcast m2 \<in> set (history j)")
-  apply blast
-  using hb_has_a_reason apply blast      
-  done
- *)
+  apply (meson deliver_locally hb.simps hb_has_a_reason insert_subset local_order_carrier_closed)
+  apply (meson causal_network.hb_has_a_reason causal_network_axioms insert_subset network.deliver_locally network.hb.simps network_axioms node_histories.local_order_carrier_closed node_histories_axioms)
+  by (metis append_Nil2 assms(4) causal_delivery hb_has_a_reason history_order_def in_set_conv_decomp prefix_elem_to_carriers prefix_of_node_history_def)
 
 lemma (in causal_network) hb_irrefl:
   assumes "hb m1 m2"
