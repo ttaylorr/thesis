@@ -12,15 +12,15 @@ fun option_max :: "int option \<Rightarrow> int option \<Rightarrow> int option"
 "option_max x None = x" |
 "option_max None y = y"
 
-fun update :: "'id state => 'id => (int => int) => ('id operation)" where
-  "update x i fn = (\<lambda>j.
+fun update :: "'id \<Rightarrow> 'id state \<Rightarrow> (int \<Rightarrow> int) \<Rightarrow> ('id operation)" where
+  "update i x fn = (\<lambda>j.
     if i = j
     then Some(fn (case (x i) of None \<Rightarrow> 0 | Some(xi) \<Rightarrow> xi))
     else None
   )"
 
 fun inc :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)" where
-"inc who st = update st who (\<lambda>x. x + 1)"
+"inc who st = update who st (\<lambda>x. x + 1)"
 
 fun delta_gcounter_op :: "('id operation) \<Rightarrow> ('id state) \<rightharpoonup> ('id state)" where
 "delta_gcounter_op theirs ours = Some (\<lambda> x. option_max (theirs x) (ours x))"
