@@ -1,0 +1,65 @@
+\chapter{Overview}
+This chapter describes our research goals, questions, and answers, as well as
+outlines our methodology in answering those questions. Our overarching goal is
+to show that several operation-based CRDT instances have suitable instantiations
+as both state- and $\delta$-state-based CRDTs, and that all implementations
+achieve strong eventual consistency. That is, that no matter what the CRDT type
+is, the different instantiations still achieve the same overall state given that
+they received the same set of messages over the network.
+
+\section{Approach}
+To accomplish the above goal, we extend the library presented originally by
+Gomes et. al. in~\citep{gomes17}. In~\citep{gomes17}, the work was designed to
+show that several instantiations of operation-based CRDTs achieve strong
+eventual consistency. To that end, they provide a network and execution model,
+as well as instantiations of a variety of CRDT objects. Specifically, they
+instantiate the Observed-Remove Set (OR-set), the Replicated Growable Array
+(RGA), and the Increment-Decrement Counter (PN-counter).
+
+One of their research goals was to show that the desired convergence property
+holds amongst these CRDT instances in all possible network executions. In other
+words, their proofs take into account dropping and reordering of messages, so
+that the convergence properties can be asserted in all network executions
+regardless of the underlying network quality in a real-world deployment.
+
+\subsection{Network Relaxations}
+In our work, it was clear that the provided network model was not flexible
+enough to support an interesting result that state- or $\delta$-state
+CRDTs achieve strong eventual consistency. Specifically, our concern was that
+the provided network model did not support non-unique message identifiers, i.e.,
+that messages in the network execution could not be duplicated. This is a key
+requirement of op-based CRDTs, where the operation contained in a message
+delivery is \textit{non-idempotent}, and so at-most-once delivery is a
+requirement for the object to achieve strong eventual consistency.
+
+For example, consider a op-based counter, specified as follows \TODO[well-typed?]:
+\[
+\mathsf{GCounter}
+  : \mathbb{I} \hookrightarrow \mathbb{N}
+  = \left\{
+      \begin{aligned}
+        \bot &= \{\} \\
+        \mathsf{op}_i(m) &= \{ i \mapsto 1 \} \\
+        \mathsf{value}(m) &= \sum_{j \in \mathbb{I}} m(j) \\
+        \mathsf{apply}(\mathsf{op}, m) &= \{
+          m(j) + i : (j, i) \in \mathsf{op}
+        \} \cup \{ j : j \in m \land j \notin \mathsf{op} \}
+      \end{aligned}
+    \right.
+\]
+The op-based GCounter in the above specification holds a vector that provides a
+partial mapping between nodes in the system (for which we refer to the set of
+identifiers as $\mathbb{I}$) and their value. If a mapping is missing for some
+$i \in \mathbb{I}$, we assume that $i \mapsto 0$.
+
+When the counter increments a value $i \in \mathbb{I}$ on $m$,
+$\mathsf{op}_i(m)$ yields the serialized operation instructing the recipient
+CRDT to increment the value of $i$ by one. This is shown in the definition of
+$\mathsf{apply}$, where the new state is comprised of the old state, where each
+node identifier $j$ is incremented by $i$ (where $i$ is the number of increment
+operations that $j$ has received, and $0$ if it has not been called).
+
+This presents a problem for
+
+\subsection{op- \& state-based CRDTs}
+\subsection{state- \& $\delta$-state CRDTs}

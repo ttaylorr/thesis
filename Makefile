@@ -5,6 +5,7 @@ SECTIONS += abstract.tex
 SECTIONS += acknowledgements.tex
 SECTIONS += dedication.tex
 SECTIONS += introduction.tex
+SECTIONS += overview.tex
 SECTIONS += results.tex
 SECTIONS += title.tex
 
