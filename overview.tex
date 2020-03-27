@@ -163,5 +163,76 @@ CRDTs achieve strong eventual consistency no matter how many times), the network
 model originally presented in~\citep{gomes17} should be extended to remove the
 assumption that message identifiers are unique.
 
+\subsection{Network Relaxations}
+In their original network model, the authors of~\citep{gomes17} use an Isabelle
+\textit{locale} in order to parameterize varying instantiations of the network
+based on certain assumptions. They provide the following definition for the
+Network locale~\citep{gomes17}:
+\begin{figure}[H]
+\begin{isabelle}
+~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
+\isacommand{locale}\ network\ {\isacharequal}\ node{\isacharunderscore}histories\ history\\
+~~~~\isakeyword{for}\>history\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ {\isasymRightarrow}\ {\isacharprime}msg\ event\ list{\isachardoublequoteclose}\ {\isacharplus}\\
+~~~~\isakeyword{fixes}\>msg{\isacharunderscore}id\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}msg\ {\isasymRightarrow}\ {\isacharprime}msgid{\isachardoublequoteclose}\\
+~~~~\isakeyword{assumes}\ delivery{\isacharunderscore}has{\isacharunderscore}a{\isacharunderscore}cause{\isacharcolon}\\
+\>\>{\isasymlbrakk}\ {\isachardoublequoteopen}Deliver\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>\>{\isasymrbrakk}\ {\isasymLongrightarrow}\ {\isasymexists}j{\isachardot}\ Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright}{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m{\isadigit{1}}\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright};\\
+\>\>\>Broadcast\ m{\isadigit{2}}\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright};\\
+\>\>\>msg{\isacharunderscore}id\ m{\isadigit{1}}\ {\isacharequal}\ msg{\isacharunderscore}id\ m{\isadigit{2}}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\ i\ {\isacharequal}\ j\ {\isasymand}\ m{\isadigit{1}}\ {\isacharequal}\ m{\isadigit{2}}{\isachardoublequoteclose}
+\end{isabelle}
+\centering
+\caption{Isabelle specification of the Network locale as given
+  in~\citep{gomes17}.}
+\end{figure}
+
+In particular, we desire to remove the assumption
+$msg{\isacharunderscore}id{\isacharunderscore}unique$, which states that for two
+broadcast messages, $m_1$ and $m_2$ appearing in the set of received messages
+for nodes $i$ and $j$, respectively, that if the $msg{\isacharunderscore}id$ of
+$m_1$ and $m_2$ are the same, then in fact both $m_1$ and $m_2$ are the same,
+and nodes $i$ and $j$ are the same. Said otherwise, every message has an
+\emph{unique} identifier.
+
+As stated earlier, in order to instantiate our state- and $\delta$-state CRDTs
+over a network environment in which the result of
+Theorem~\ref{thm:state-sec-dup} will be tested, we must allow for two messages
+to share the same message identifier. In other words, in order to reuse the
+network model from~\citep{gomes17}, we must strengthen it in order to allow for
+messages to be duplicated in ordinary executions of that network model.
+
+For our purposes, we begin by specifying a strengthened Network locale as
+follows:
+\begin{isabelle}
+~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
+\isacommand{locale}\ network\ {\isacharequal}\ node{\isacharunderscore}histories\ history\\
+~~~~\isakeyword{for}\>history\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ {\isasymRightarrow}\ {\isacharprime}msg\ event\ list{\isachardoublequoteclose}\ {\isacharplus}\\
+~~~~\isakeyword{fixes}\>msg{\isacharunderscore}id\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}msg\ {\isasymRightarrow}\ {\isacharprime}msgid{\isachardoublequoteclose}\\
+~~~~\isakeyword{assumes}\ delivery{\isacharunderscore}has{\isacharunderscore}a{\isacharunderscore}cause{\isacharcolon}\\
+\>\>{\isasymlbrakk}\ {\isachardoublequoteopen}Deliver\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>\>{\isasymrbrakk}\ {\isasymLongrightarrow}\ {\isasymexists}j{\isachardot}\ Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright}{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
+\end{isabelle}
+
+Immediately, many of the proofs related to the network model are no longer
+valid. This can occur due to a trivial issue, such as referencing the removed
+assumption in a simplification step, or a more complex matter, such as relying
+on the message identifier uniqueness property in order to establish some goal.
+We describe our approach for mending those broken proofs in order to reestablish
+the locale's instantiation:
+\begin{enumerate}
+  \item Remove the assumption
+    $msg{\isacharunderscore}id{\isacharunderscore}unique$ from the Network
+    locale, as shown above.
+  \item In any proof specified within that locale that mentions the
+    aforementioned assumption remove it from tactic arguments.
+  \item If the proof checks successfully without the additional tactic
+    arguments, continue.
+  \item Otherwise, end the proof with the $\isakeyword{sorry}$ keyword and
+    continue.
+\end{enumerate}
+
+\TODO[explain proof strategy, describe modified proofs, claim network
+strengthening, conclude section]
+
 \subsection{op- \& state-based CRDTs}
 \subsection{state- \& $\delta$-state CRDTs}
