@@ -22,7 +22,7 @@ words, their proofs take into account dropping and reordering of messages, so
 that the convergence properties can be asserted in all network executions
 regardless of the underlying network quality in a real-world deployment.
 
-\subsection{Network Relaxations}
+\subsection{Motivating Network Relaxations}
 In our work, it was clear that the provided network model was not flexible
 enough to support an interesting result that state- or $\delta$-state
 CRDTs achieve strong eventual consistency. Specifically, our concern was that
@@ -59,7 +59,109 @@ $\mathsf{apply}$, where the new state is comprised of the old state, where each
 node identifier $j$ is incremented by $i$ (where $i$ is the number of increment
 operations that $j$ has received, and $0$ if it has not been called).
 
-This presents a problem for
+This presents a problem for instantiations of the op-based GCounter in network
+environments where messages delivered over that network are not known to have
+unique identifiers. In other words, this presents a problem for op-based
+GCounters in networks that can duplicate messages sent over that network.
+
+We first present an example of an execution in an unreliable network for which
+the op-based GCounter fails to achieve consistency:
+\begin{example}
+  Consider an execution amongst at least two op-based GCounters in a network
+  which is able to duplicate messages. Suppose that the following happens, in
+  this order:
+  \begin{enumerate}
+    \item One op-based GCounter receives an $\mathsf{op}_i(m)$ for some $i$.
+    \item That counter applies the operation locally, taking $i \mapsto 1$. Then,
+      the counter broadcasts the operation over the network, so that replicas may
+      apply the same operation to their own state.
+    \item The network duplicates that message, at least once.
+    \item Other replicas receive more than one copy of the operation, mapping
+      \textit{their} value of $i \mapsto v$ for $v \ge 1$.
+  \end{enumerate}
+  This is a trivial example of the non-idempotency of op-based CRDT instances
+  requiring at-most-once delivery semantics of the network in which they are
+  instantiated.
+\end{example}
+
+State-based CRDTs, however, do not require at-most-once semantics in order to
+achieve strong eventual consistency. This follows from the requirement that a
+state-based CRDT's $\sqcup$ (read: \textit{join} or \textit{meet}) operation be
+idempotent. To illustrate this remark, consider the above example, this time
+using instead the state-based variant of the GCounter, as described
+in~\citep{almedia18}.
+
+\begin{example}
+  Suppose that we use a state-based GCounter, given as follows (as originally
+  described in~\citep{almedia18}):
+  \[
+    \mathsf{GCounter}
+      : \mathbb{I} \hookrightarrow \mathbb{N}
+      = \left\{
+          \begin{aligned}
+            \bot &= \{\} \\
+            \mathsf{inc}_i(m) &= m\{ i \mapsto m(i) + 1 \} \\
+            \mathsf{value}(m) &= \sum_{j \in \mathbb{I}} m(j) \\
+            m \sqcup m' &= \{
+              j \mapsto \max(m(j), m'(j)) :
+              j \in \mathrm{dom}~m \cup \mathrm{dom}~m'
+            \}
+          \end{aligned}
+        \right.
+  \]
+
+  Then, in a deployment of at least two state-based GCounters in a network that
+  can duplicate messages, the state of each counter evolves as follows:
+  \begin{enumerate}
+    \item One state-based GCounter receives an $\mathsf{inc}_i(m)$ for some $i$.
+      Then, each counter is left in the following state:
+      \[
+        m_1 = \{ i \mapsto 1 \},\quad
+        m_2 = \bot
+      \]
+    \item Replica $m_1$ sends its state over the network, and $m_2$ applies it
+      locally:
+      \[
+        m_1 = \{ i \mapsto 1 \},\quad
+        m_2 = \{\} \sqcup m_1 = m_1
+      \]
+    \item The network duplicates $m_1$'s state from the previous step of the
+      execution, and $m_2$ applies it again according to the rules of $\sqcup$:
+      \[
+        \begin{aligned}
+          m_1 = \{ i \mapsto 1 \},\quad
+          m_2
+            &= \{ i \mapsto 1 \} \sqcup \{ i \mapsto 1 \} \\
+            &= \{ i \mapsto \max(1, 1) \} \\
+            &= \{ i \mapsto 1 \} = m_1 = m_2 \\
+        \end{aligned}
+      \]
+  \end{enumerate}
+\end{example}
+
+The above example illustrates a general principle, which is the following:
+\begin{theorem} \label{thm:state-sec-dup}
+  State-based CRDTs exhibit strong eventual consistency when operating in a
+  network environment with non-unique messages.
+\end{theorem}
+\begin{proof}
+  By induction on the number of times $i$ a message $m$ is received. When $i =
+  1$, the goal is trivially established. When $i > 1$, the idempotency of
+  $\sqcup$ shows that:
+  \[
+    m \sqcup \underbrace{m' \sqcup \cdots \sqcup m'}_{\text{$i-1$ times}} \sqcup~m'
+      = m \sqcup m' \sqcup m'
+      = m \sqcup m'
+  \]
+  where the second equality follows from the inductive hypothesis, and the third
+  from the fact that $m' \sqcup m' = m'$ by the idempotency of $\sqcup$.
+\end{proof}
+
+This result guides our approach as follows: to show a stronger result that uses
+Theorem~\ref{thm:state-sec-dup} (i.e., that state- and $\delta$-state based
+CRDTs achieve strong eventual consistency no matter how many times), the network
+model originally presented in~\citep{gomes17} should be extended to remove the
+assumption that message identifiers are unique.
 
 \subsection{op- \& state-based CRDTs}
 \subsection{state- \& $\delta$-state CRDTs}
