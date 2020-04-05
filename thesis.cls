@@ -33,7 +33,8 @@
 
 \newcommand*{\supervisor}[1]{\gdef\@supervisor{#1}}
 
-\bibliographystyle{unsrt}
+\bibliographystyle{abbrvnat}
+\setcitestyle{authoryear}
 
 \newtheorem{definition}{Definition}[chapter]
 \newtheorem{theorem}{Theorem}[chapter]

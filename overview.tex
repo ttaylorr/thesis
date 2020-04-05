@@ -1,4 +1,6 @@
 \chapter{Overview}
+\label{chap:overview}
+
 This chapter describes our research goals, questions, and answers, as well as
 outlines our methodology in answering those questions. Our overarching goal is
 to show that several operation-based CRDT instances have suitable instantiations
@@ -9,7 +11,7 @@ they received the same set of messages over the network.
 
 \section{Approach}
 To accomplish the above goal, we extend the library presented originally by
-Gomes et. al. in~\citep{gomes17}. In~\citep{gomes17}, the work was designed to
+Gomes et. al. in~\cite{gomes17}. In~\citep{gomes17}, the work was designed to
 show that several instantiations of operation-based CRDTs achieve strong
 eventual consistency. To that end, they provide a network and execution model,
 as well as instantiations of a variety of CRDT objects. Specifically, they
@@ -234,5 +236,7 @@ the locale's instantiation:
 \TODO[explain proof strategy, describe modified proofs, claim network
 strengthening, conclude section]
 
-\subsection{op- \& state-based CRDTs}
+\section{op- \& state-based CRDTs}
+\label{sec:op-state-unify}
+
 \subsection{state- \& $\delta$-state CRDTs}
