@@ -7,13 +7,18 @@
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \RequirePackage{amsthm}
+\ifdefined\Print
+\RequirePackage{geometry}
+\RequirePackage[hidelinks]{hyperref}
+\else
 \RequirePackage[margin=1in]{geometry}
+\RequirePackage{hyperref}
+\fi
 \RequirePackage{isabelle}
 \RequirePackage[square,sort,comma,numbers]{natbib}
 \RequirePackage{float}
 \RequirePackage{graphicx}
 \RequirePackage{isabelle,isabellesym}
-\RequirePackage{hyperref}
 \RequirePackage{xcolor}
 
 \isabellestyle{it}
