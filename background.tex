@@ -1,79 +1,150 @@
 \chapter{Background}
 \label{chap:background}
 
-There are two broad classes of replicated datatypes that achieve strong eventual
-consistency through two different mechanisms. The first is called
-\textit{state-based} and forms a \textit{lattice} of possible states, where two
-states are \textit{joined} together by a join operation defined over that
-lattice. The latter is called \textit{operation-} (or \textit{op-})
-\textit{based}, and relies on strong message delivery guarantees over a shared
-communication channels to communicate updates in such a way that nodes receiving
-those updates are guaranteed to execute them identically, so that all
-participants in this fashion also reflect the same state. We consider each of
-these two kinds in turn:
+This chapter outlines the preliminary information necessary to contextualize the
+remainder of this thesis for readers unfamiliar with existing CRDT research.
+Here we motivate conflict-free replicated datatypes (CRDTs), formalize state-
+and op-based variants of CRDTs, and present examples of common instantiations.
+Finally, we conclude with a discussion of the different levels of consistency
+guarantees that each CRDT variant offers, and rationalize which levels of
+consistency are appealing in certain situations.
+
+\section{Coordinated Replication}
+In a distributed system, it is common for more than one participant to need to
+have a \textit{view} of the same data. For example, multiple nodes may need to
+have access to the same internal data structures necessary to execute some
+computation. When a piece of data is shared among many participants in a system,
+we say that that data is \textit{replicated}.
+
+However, saying only that some data is ``replicated'' is under-specified. For
+example: how often is that data updated among multiple participants? How does
+that data behave when multiple participants are modifying it concurrently? Do
+all participants always have the same view of the data, or are there temporary
+divergences between the participants in the system?
+
+It turns out that the answer of the last question is of paramount importance.
+Traditionally speaking, in a distributed system, all participants have an
+identical replica of any piece of shared data at all times. That is, at no
+moment in time will there be a replica that could atomically compare its
+replicated value for some data with any other replica for equality and disagree.
+Said otherwise, all replicated values are equal everywhere all at once. This is
+an appealing property to say the least, because it allows system designers to
+conceptually treat a distributed system as a single unit of computation. That
+is, if all replicas maintain the same memory, it is conceptually as if one whole
+machine is being replicated many times.
+
+That being said, upholding this requirement is not a straightforward task. An
+immediate question arises which is: who coordinates when updates to a piece of
+data are replicated to other participants in the system? What happens when the
+coordinator becomes unresponsive, or otherwise misbehaves? Who is responsible
+for electing a new participant to take over the coordination duties of the
+participant which was no longer able to fulfill them?
+
+\section{Distributed Consensus Algorithms}
+
+This gives rise to the area of consensus algorithms. A consensus algorithm,
+broadly speaking, is a routine which multiple participants follow in order to
+agree on a shared value.
+
+We first state briefly the properties that an algorithm must have to solve
+distributed consensus:
+\begin{definition}[Distributed Consensus Algorithm, \citep{howard19}]
+  \label{def:consensus}
+  An algorithm is said to solve distributed consensus if it has the following
+  three safety requirements:
+  \begin{description}
+    \item[Non-triviality] The decided value must have been proposed by a
+      participant.
+    \item[Safety] Once a value has been decided, no other value will be decided.
+    \item[Safe learning] If a participant learns a value, it must learn the
+      decided value.
+  \end{description}
+  In addition, it must satisfy the following two progress requirements:
+  \begin{description}
+    \item[Progress] Under previously agreed-upon liveness conditions, if a value
+      is proposed by a participant, then a value is eventually decided.
+    \item[Eventual learning] Under the same conditions as above, if a value is
+      decided, then that value must be eventually learned.
+  \end{description}
+\end{definition}
+
+We summarize the two most popular and often-implemented algorithms for
+distributed consensus~\citep{howard20}:
+
+\paragraph{Paxos}
+The most popular algorithm in this field is Paxos~\citep{lamport98}. Broadly
+speaking, values (corresponding to changing the value of a replicated piece of
+data) are \textit{proposed}, \textit{accepted}, and \textit{learned} by
+participants in the system. This process is coordinated by an elected
+\textit{leader}, which is responsible for communicating with other participants
+in order to drive the process forward. When a leader becomes unresponsive, other
+participants in the system begin an election process to replace the leader, and
+do so when a majority of participants (and the new leader) acknowledge the
+  change.
+
+\paragraph{Raft}
+Lest we omit another often-implemented consensus algorithm, we briefly discuss
+the Raft consensus algorithm as well~\citep{ongaro14}. Raft emphasizes
+understandability in its design, and ``separates the key elements of consensus''
+by silo-ing replication, leader election, and safety into different sub-problems
+at the design level. An execution of Raft consists of several \textit{terms}. To
+begin each term, an election is held in order to determine a \textit{leader}.
+Once elected, the leader is responsible for disseminating updates to each
+replicas copy of the \textit{log}. Conflicting log entries are always resolved
+in favor of the leader's copy. Finally, Raft enforces safety by imposing
+additional restrictions on the behavior of a term such that the log replication
+strategy is proven to be safe. This is argued in~\citep{ongaro14} and
+mechanically verified in~\citep{wilcox15}.
+
+\subsection{Safety in Distributed Consensus Algorithms}
+
+Both Raft and Paxos are notoriously difficult to implement correctly in
+practice~\citep{howard20}. Distributed consensus algorithms are often the
+subject of undergraduate-level courses in networks and distributed systems.
+Often, commercially-available implementations of these algorithms are built into
+off the shelf solutions, such as Apache Zookeeper and CoreOS's
+
+It is a natural question to ask why these algorithms are so notoriously
+difficult to implement in practice. Individually, the properties
+in Definition~\ref{def:consensus} seem reasonably in their own right. We propose
+that it is the safety property (that once a value has been decided, no other
+values will be decided) that makes implementing these algorithms correctly so
+difficult in practice. In essence, coordinating the proposals individual
+participants submit is the central difficulty of these algorithms.
+
+Conflict-free Replicated Datatypes (CRDTs) are a natural answer to this
+question. By allowing participants to temporarily diverge from the state of the
+overall computation (c.f., the second property of
+Definition~\ref{def:eventual-consistency}), CRDTs allow replicas to violate the
+safety property of Definition~\ref{def:consensus}. By giving up the immediacy
+and permanence that the safety properties of a traditional distributed consensus
+algorithm, CRDTs allow for a dramatically lower implementation burden in
+practice, and are substantially easier to reason about.
+
+\section{state-based CRDTs}
+We begin with a discussion of state-based CRDTs from their inception
+in~\citep{shapario11}. A state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
+individual replica of a state-based CRDT is at some state $s^i \in S$ for $i \ge
+0$, and is initially $s^0$. The value may be queried by any client or other
+replica by invoking $q$. It may be updated with $u$, which has a unique type per
+CRDT object. Finally, $m$ merges the state of some other remote replica.
+
+Crucially, the states of a given state-based CRDT form a partially-ordered set
+$\langle S, \sqsubseteq \rangle$. This poset is used to form a join
+semi-lattice, where any finite subset of elements has a natural least
+upper-bound. Consider two elements $s^m, s^n \in S$. The least upper-bound
+$s = s^m \sqcup s^n$ is given as:
+\[
+  \forall s'.\; s' \sqsupseteq s^m, s^n \Rightarrow
+    s^m \sqsubseteq s \land
+    s^n \sqsubseteq s \land
+    s \sqsubseteq s'
+\]
+In other words, a $s = s^m \sqcup s^n$ is a least upper-bound of $s^m$ and $s^n$
+if it is the smallest element that is at least as large as both $s^m$ and $s^n$.
 
 \section{op-based CRDTs}
-
-\section{State-based CDRTs}
-\label{sec:background-state-based-crdts}
-A CRDT is \textit{state-based} when the information shared between multiple
-participants within the system is \textit{state-centric}; that is, when members
-of the system use the announcement of their internal state to drive the system
-forward towards the strong form of eventual consistency.
-
-Specifically, a state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$, where $S$ is
-the lattice of all possible states, $s^0 \in S$ is the initial state, and $q$,
-$u$, $m$ are the query, update, and merge functions~\citep{shapiro11}.
-\textit{Querying} a state-based CRDT returns the internal state of that CRDT at
-the time it was queried. \textit{Updating} a CRDT updates its internal state to
-be some new value, where the kind of update is specific to the particular CRDT.
-Finally, \textit{merging} is done when a CRDT wishes to incorporate updates from
-some other CRDT into its internal state, so that it might be reflected by a
-subsequent query.
-
-We now devote our attention to the \textit{join semi-lattice} $S$ which makes up
-all of the possible states reachable in any execution of the CRDT, and which is
-central to an understanding of the state-based CRDT's convergence properties.
-The semi-lattice $S$ is a partial ordering $\leq$ of all possible states, where
-each pair of states has a \textit{least upper-bound} $\sqcup$:
-\[
-  s = s' \sqcup s'',\quad \mathrm{if}~
-    s', s'' \leq s~\mathrm{and}~
-    s = \min_{s', s'' \leq s'''} s'''
-\]
-Recall also that a partial ordering $\leq$ has the following properties, which
-are near those of an equivalence class (but do not in practice form an
-equivalence class, since partial orderings are antisymmetric):
-\begin{description}
-  \item[Reflexivity] For all $s \in S$, $s \leq s$.
-  \item[Antisymmetry] For all $s, s' \in S$, if $s \leq s'$ and $s' \leq s$,
-    then $s = s'$.
-  \item[Transitivity] For all $s, s', s'' \in S$, if $s \leq s'$ and $s' \leq
-    s''$, then $s \leq s''$.
-\end{description}
-
-Each intermediate state in the execution of a state-based CRDT is a member of
-the monotone join semi-lattice defined by $S$. States are non-decreasing, that
-is, it is always the case that:
-\[
-  s \sqsubseteq s \sqcup s',\quad \forall s' \in S
-\]
-This property is used to guarantee that all executions of a state-based CRDT
-having received the same set of updates achieve the same final state.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=.75\textwidth]{figures/1/semi-lattice.pdf}
-  \caption{\TODO}
-\end{figure}
-
-\TODO This leads to the main result of~\citep{shapiro11}:
-\begin{theorem}[Convergence of state-based CRDTs (Shapiro)]
-  Assuming that the communication between instances of a state-based CRDT
-  satisfying the semi-lattice structure (as above) is eventual and terminating,
-  then any state-based object satisfying these conditions is strong eventually
-  consistent.
-\end{theorem}
+\label{sec:op-based-crdts}
 
 \section{Conflict Free Replicated Datatypes}
 \subsection{Example: Grow-Only Counter}
