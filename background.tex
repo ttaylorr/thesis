@@ -143,6 +143,106 @@ $s = s^m \sqcup s^n$ is given as:
 In other words, a $s = s^m \sqcup s^n$ is a least upper-bound of $s^m$ and $s^n$
 if it is the smallest element that is at least as large as both $s^m$ and $s^n$.
 
+For now, we set aside the query operations $q$, and allow $q$'s implementation
+detail that is left to individual CRDTs, and is specific to their use-case. For
+e.g., it may be that a vector-counter CRDT's implementation of $q$ is
+something like:
+\[
+  q : S \mapsto \mathbb{N} = \sum_{i \in \mathbb{I}} s(i)
+\]
+In this example, let $S = \mathbb{N}^{|\mathbb{I}|}_+$, where $\mathbb{I}$ is
+the set of replicas, and $s(i)$ returns the $i$th index of the state vector.
+
+We'll focus our attention for now on the implementation of $m$, which is the
+function responsible for merging the states of two independent replicas of a
+given state-based CRDT. Given a suitable set of states which forms a lattice, we
+assume that:
+\[
+  m(s_1, s_2) = s_1 \sqcup s_2
+\]
+and that whenever a CRDT replica $r_1$ at state $s_1$ receives an update from
+another replica $r_2$ at state $s_2$, that $r_1$ attains a new state $s_1' =
+m(s_1, s_2)$. This process, in addition to each replica periodically
+broadcasting an update which contains its current state, is carried on
+continually, and $m$ is invoked whenever a new state is received. That is, each
+replica is evolving over time in response to outside instruction, and in turn
+these updates cause internal state transitions, which themselves cause those new
+states to be broadcasted and eventually joined at every other replica.
+
+The $\sqcup$ operator has three mathematical properties that make it an
+appealing choice for joining states together as in $m$. These are its
+\emph{commutativity}, \emph{associativity}, and \emph{idempotency}. That is, for
+any states $s_1$, $s_2$, and $s_3$, that:
+\begin{itemize}
+  \item The operator is \emph{commutative}, i.e., that $s_1 \sqcup s_2 = s_2
+    \sqcup s_1$.
+  \item The operator is \emph{associative}, i.e., that $s_1 \sqcup (s_2 \sqcup
+    s_3) = (s_1 \sqcup s_2) \sqcup s_3$.
+  \item Finally, the operator is \emph{idempotent}, i.e., that $s_1 \sqcup s_1 =
+    s_1$.
+\end{itemize}
+
+These mathematical properties correspond to real-world constraints that often
+arise naturally in the area of distributed systems. Take, for example, that
+messages may occur out of order. This often happens in, for example, UDP (User
+Datagram Protocol) networks, where the received datagrams are not guaranteed to
+be in the order that they were sent. Because $\sqcup$ is commutative, replicas
+joining the updates of other replicas do not need to receive those updates in
+order, because the result of $s_1 \sqcup s_2$ is the same as $s_2 \sqcup s_1$.
+That is, it does not matter which of two updates from another replica arrives
+first, because the result is the same no matter in which order they are
+delivered.
+
+For concreteness, say that we have two replicas, $r_1$ and $r_2$. $r_1$
+initially begins at state $s$, and $r_2$ progresses through states $s_1, \ldots,
+s_n$ for $n > 0$. We then see that it does not matter the order in which these
+updates are delivered to $r_1$. Suppose that we have a mapping $\pi : [n] \to
+[n]$ which maps the true order of a state $s_i$ to the order in which it was
+delivered. Then, we can see that the choice of $\pi$ is arbitrary, because:
+\[
+  s \gets s \sqcup (s_{\pi(1)} \sqcup \cdots \sqcup s_{\pi(n)})
+\]
+for any choice of $\pi$, because
+\[
+  s_{\pi(1)} \sqcup \cdots \sqcup s_{\pi(n)} = s_1 \sqcup \cdots \cdots s_n
+\]
+which follows from the fact that $\sqcup$ is commutative, and can be shown
+inductively on the number of updates, $n$.
+
+Next, it is often common for packets to be duplicated in transit over a network.
+That is, even though a packet may be sent from a source only once, it may be
+received by a recipient on the same network multiple times. For this, the
+idempotency of $\sqcup$ comes in handy: no matter how many times a state is
+broadcast from an evolving replica, any other replica on the network will
+tolerate that set of messages, because it only requires the message to be
+delivered once. Any additional duplicates are merged in without changing the
+state.
+
+Finally, associativity is an appealing property, too, although its applications
+are both less immediate and less often-used in this thesis. Suppose that several
+replicas of a state-based CRDT reside on a network with, say, high latency, or
+it is otherwise undesirable to send more messages on the network than is
+necessary. Because associativity implies that the grouping of updates is
+arbitrary, a replica can maintain a \textit{set} of pending updates, and
+periodically\footnote{``Periodically'' is arbitrary and an implementation
+choice, but it would be easy to imagine that this could be interpreted as
+whenever the set reaches a certain size, and/or after a certain amount of time
+has passed since flushing the set of pending updates.} send that set to other
+replicas by first folding $\sqcup$ over it and sending a single update.
+
+Although commutativity and idempotency receive the greatest share of attention
+within CRDT research, associativity is most often used in the area of
+$\delta$-state CRDTs. We will discuss a couple of applications of the
+associative property of $\sqcup$ in detail in Chapter~\ref{chap:future-work},
+and overview them briefly now. The associativity of updates means that
+$\delta$-state CRDTs means that these objects can form an \emph{delta interval},
+say, $\Delta^a_b$, which comprises the updates on the interval of time $[a,b)$.
+When certain restrictions on when an interval $\Delta^a_b$ may be flushed based
+on the values of $a$, $b$, other properties may be attained such as causal
+consistency~\citep{almedia18}. In this thesis, we do not investigate this
+particular application further, although it appears to be a promising future
+direction.
+
 \section{op-based CRDTs}
 \label{sec:op-based-crdts}
 
