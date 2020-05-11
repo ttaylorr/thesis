@@ -122,6 +122,7 @@ algorithm, CRDTs allow for a dramatically lower implementation burden in
 practice, and are substantially easier to reason about.
 
 \section{state-based CRDTs}
+\label{sec:state-based-crdts}
 We begin with a discussion of state-based CRDTs from their inception
 in~\citep{shapario11}. A state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
 individual replica of a state-based CRDT is at some state $s^i \in S$ for $i \ge
@@ -246,12 +247,317 @@ direction.
 \section{op-based CRDTs}
 \label{sec:op-based-crdts}
 
-\section{Conflict Free Replicated Datatypes}
+Operation-based (op-based) CRDTs, like their state-based counterparts have
+internal states that form a semi-lattice. However, their communication styles
+differ fundamentally: op-based CRDTs communicate \textit{operations} that
+indicate a kind of update to be applied locally, instead of the \textit{result}
+of that update (as is the case in state-based CRDTs).
+
+This section discusses the original op-based CRDTs and pays brief attention to
+some newer specifications such as \textit{pure op-based CRDTs}~\citep{shapiro11,
+baquero17}.
+
+An op-based CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
+Section~\ref{sec:state-based-crdts}, $S$, $s^0$, and $q$, retain their
+original meaning (that is, the state set, an initial state, a query function,
+and an update function). It is temping to say that the op-based $u$ retains the
+same meaning as the state-based $u$, however it does not. In op-based CRDTs,
+the pair $(t,u)$ takes the place of the $m$ merging function from state-based
+CRDTs. $t$ and $u$ correspond to \textit{prepare-update} and
+\textit{effect-update}, respectively. When an update is made by a caller (say,
+for example, incrementing the value of an op-based CRDT counter), it is done in
+two phases~\citep{shapiro11}:
+\begin{enumerate}
+  \item First, the \textit{prepare-update} implementation $t$ is applied at the
+    replica receiving the update. $t$ is side-effect free, and prepares a
+    representation of the operation about to take place.
+  \item Next, the \textit{effect-update} implementation $u$ is applied at the
+    local replica, causing the desired update to take effect.
+  \item Finally, the representation from $t$ is sent to all other replicas using
+    the delivery relation $P$, at which point they, too, apply the
+    representation of the effect using $u$.
+\end{enumerate}
+
+This is the critical distinction between op- and state-based CRDTS:
+state-based CRDTs propagate their state by applying a local update and taking
+advantage of the lattice structure of their state-space in order to define a
+convenient merge function. On the other hand, op-based CRDTs propagate their
+state by sending the \textit{representation} of an update to other replicas as
+an instruction. This critical juncture translates into a corresponding
+relaxation in the operation $(t, u)$, which is that unlike the state-based CRDTs
+whose $m$ must be commutative, associative, and idempotent, and op-based CRDT
+implementation of $(t, u)$ need only be commutative.
+
+To explain why, we briefly restate the definition of a causal history for
+op-based CRDTs:
+
+\begin{definition}[op-based Causal History~\citep{shapiro11}]
+An object's casual history $C = \{ c_1, \ldots, c_n \}$ is defined as follows.
+Initially, $c_i^0 = \emptyset$ for all $i \in \mathbb{I}$. If the $k$th method
+execution is idempotent (that is, it is either $q$ or $t$), then the causal
+history remains unchanged in the $k$th step, i.e., that $c_i^k = c_i^{k-1}$. If
+the execution at $k$ is non-idempotent (i.e., it is $u$), then $c_i^{k} =
+c_i^{k-1} \cup \{ u_i^k(\cdot) \}$.
+\end{definition}
+
+Causal history of an op-based CRDT is defined based on the
+\textit{happens-before} relation $\to$ as follows. An update $(t,u)$ happens
+before $(t',u')$ (i.e., that $(t, u) \to (t', u')$) iff $u \in c_{j}^{K_j(t')}$
+if $K_j$ is the injective mapping from operation to execution time. Shapiro and
+his co-authors go on to describe a sufficient definition for the commutativity
+of $(t,u)$ in op-based CRDTs. In effect, they say that two pairs $(t,u)$ and
+$(t',u')$ commute if and only if for any reachable state $s \in S$ the effect of
+applying them in either order is the same. That is, $s \circ u \circ u' \equiv s
+\circ u' \circ u$.
+
+They claim that having commutativity for concurrent operations as well as an
+in-order delivery relation $P$ for comparable updates is sufficient to prove
+that op-based CRDTs achieve SEC.
+
+\subsection{Pure op-based CRDTs}
+
+For completeness in this area, we briefly discuss the work of Baquero and his
+co-authors in developing \textit{pure} op-based CRDTs~\citep{baquero17}. Pure
+op-based CRDTs address a highly-interpretable definition of $t$ and $u$ to
+restrict the payload size of the messages that these operations generate and
+require, respectively. In particular, they point out that op-based CRDTs may
+behave as if they were state-based CRDTs when $t$ encodes the state $s^k$ and
+$u$ acts like a full join on the lattice $S$.
+
+A particular advantage of op-based CRDTs over their state-based counter-parts is
+that they are generally believed to require less overall bandwidth to
+communicate updates. The key trade-off is that op-based CRDTs require a much
+stronger delivery semantics $P$ (in particular, $P$ must provide in-order and
+at-most-once delivery of messages) in order to attain SEC. Of course, treating
+an op-based CRDT as a state-based one eliminates many of these benefits.
+
+To address this issue, Baquero and his co-authors treat the state-space $S$ of
+a \emph{pure} op-based CRDT as instead a poset of
+operations\footnote{Incomparable items are generally interpreted as concurrent
+operations performed on a pure op-based CRDT}, where the state is interpreted as
+applying elements in the poset order. They couple this with the additional
+restriction that $(t,u)$ can only send operations to other replicas, meaning
+that, for instance, they cannot send the entire state of a replica to all other
+replicas.
+
+\section{$\delta$-state CRDTs}
+In this section, we describe the refinement of CRDTs that is the interest and
+focus of the body of this thesis. That is the $\delta$-state CRDT, as described
+in~\citep{almedia18}. In their original work, Almeida and his co-authors
+describe $\delta$-state CRDTs as:
+\begin{quote}
+...ship[ping] a \textit{representation of the effect} of recent update operations
+on the state, rather than the whole state, while preserving the idempotent
+nature of \textit{join}
+\end{quote}
+
+We will present an example of the $\delta$-state CRDT in a below section. For
+now, we focus on the background material necessary to contextualize
+$\delta$-state CRDTs. This refinement can be thought of as taking ideas from
+both state- and op-based CRDTs to mediate some of the trade-offs described
+above. Like a state-based CRDT, $\delta$-state based CRDTs have both internal
+states and message payloads that form a join semi-lattice. This endows the
+$\delta$-state CRDT with a commutative, associative, and idempotent \emph{join}
+operator, as before. Likewise, this means that the $\delta$-state CRDT supports
+weak delivery semantics, such as delayed, dropped\footnote{In this thesis, we
+consider dropped messages as having been delayed for an infinite amount of time.
+This allows us to reason about a smaller set of delivery semantics.}, reordered,
+and duplicated message delivery.
+
+Unlike a state-based CRDT, however, $\delta$-state CRDTs do not send their
+internal state $s^k$ after an update at time $k-1$. With sufficient
+conditions\footnote{Effectively, sufficient conditions mean an internal state
+whose updates can be represented as ``smaller'' items within the set of
+reachable states. For example, to communicate the operation ``insert element $x$
+into a set'', send the unitary set $\{x\}$ instead of $S \cup \{ x \}$.}, this
+means that:
+\begin{itemize}
+  \item $\delta$-state CRDTs support the same weak requirements from the network
+    as ordinary state-based CRDTs. That is, they support dropping, duplicating,
+    reordering, and delaying of messages.
+  \item $\delta$-state CRDTs have similarly low-overhead of message size as
+    op-based CRDTs.
+\end{itemize}
+On the converse, $\delta$-state CRDTs do not:
+\begin{itemize}
+  \item ...have potentially large payload size, as state-based CRDTs are prone
+    to have.
+  \item ...require a strong delivery semantics $P$ that ensures ordered,
+    at-most-once delivery as op-based CRDTs do.
+\end{itemize}
+Said otherwise, $\delta$-state CRDTs have the relative strengths of both state-
+and op-based CRDTs without their respective drawbacks. This makes them an area
+of interest, and they are the subject to which we dedicate the remainder of this
+thesis.
+
+\section{Elementary CRDT instantiations}
+In this section, we provide the specification of three common CRDT instantiations
+for three of the four aforementioned CRDT refinements. In particular, we show
+instantiations of the Grow-Only Counter (G-Counter), Positive-Negative Counter
+(PN-Counter), and the Grow-Only Set (G-Set) for state-, op-, and
+$\delta$-state-based CRDTs. In each of the below, we assume that $\mathcal{I}$
+refers to the set of node identifiers corresponding to the active
+replicas\footnote{In this thesis, we consider $\mathbb{I}$ to be fixed during
+execution; that is, we do not support addition or deletion of replicas.}. For
+now, we assume that this set is fixed.
+
 \subsection{Example: Grow-Only Counter}
 \label{sec:example-gcounter}
 
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Counter}_s = \left\{\begin{aligned}
+      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
+      s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
+      q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
+      u &: \lambda s,i. s\left\{ i \mapsto s(i) + 1 \right\} \\
+      m &: \lambda s_1, s_2. \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+      \mathsf{dom}(s_2) \right\}
+    \end{aligned}\right.
+  \]
+  \caption{state-based \textsf{G-Counter} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Counter}_o = \left\{\begin{aligned}
+      S &: \mathbb{N}_+ \\
+      s^0 &: 0 \\
+      q &: \lambda s. s \\
+      t &: \textsf{inc} \\
+      u &: \lambda s,p. s + 1 \\
+    \end{aligned}\right.
+  \]
+  \caption{op-based \textsf{G-Counter} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Counter}_\delta = \left\{\begin{aligned}
+      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
+      s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
+      q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
+      u &: \lambda s,i. \left\{ i \mapsto s(i) + 1 \right\} \\
+      m &: \lambda s_1, s_2. \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+      \mathsf{dom}(s_2) \right\}
+    \end{aligned}\right.
+  \]
+  \caption{$\delta$-state based \textsf{G-Counter} CRDT}
+\end{figure}
+
 \subsection{Example: PN-Counter}
-\subsection{Example: OR-Set}
+\label{sec:example-pncounter}
+
+\begin{figure}[H]
+  \[
+    \textsf{PN-Counter}_s = \left\{\begin{aligned}
+      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
+      s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
+      q &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
+        \mathcal{I}} (\snd~s)(i) \\
+      u &: \lambda s,(i,op). \begin{cases}
+             (\fst~s)\left\{ i \mapsto (\fst~s)(i) + 1 \right\} \times (\snd~s) & \text{if $op=+$} \\
+             (\fst~s) \times (\snd~s)\left\{ i \mapsto (\snd~s)(i) + 1 \right\} & \text{if $op=-$} \\
+           \end{cases} \\
+      m &: \lambda s_1, s_2.\, \begin{aligned}
+             &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\fst~s_1) \cup (\fst~s_1)) \right\} \\
+             \times &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\snd~s_1) \cup (\snd~s_1)) \right\}
+           \end{aligned}
+    \end{aligned}\right.
+  \]
+  \caption{state-based \textsf{PN-Counter} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{PN-Counter}_o = \left\{\begin{aligned}
+      S &: \mathbb{N}_+ \times \mathbb{N}_+  \\
+      s^0 &: 0 \times 0 \\
+      q &: \lambda s. (\fst~s) - (\snd~s) \\
+      t &: \lambda i, \mathsf{op}. (i, \mathsf{op}),\quad \mathsf{op} \in \{
+        \mathsf{inc}, \mathsf{dec} \} \\
+      u &: \lambda s,\mathsf{op}. \begin{cases}
+             (\fst~s) + 1 \times (\snd~s) & \text{if $\mathsf{op} = \mathsf{inc}$} \\
+             (\fst~s) \times (\snd~s) + 1 & \text{if $\mathsf{op} = \mathsf{dec}$} \\
+           \end{cases} \\
+    \end{aligned}\right.
+  \]
+  \caption{op-based \textsf{PN-Counter} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \[
+    \textsf{PN-Counter}_\delta = \left\{\begin{aligned}
+      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
+      s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
+      q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
+        \mathcal{I}} (\snd~s)(i) \\
+      u^\delta &: \lambda s,(i,op). \begin{cases}
+             \{ i \mapsto 1 \} \times \emptyset & \text{if $op=+$} \\
+             \emptyset \times \{ i \mapsto 1 \} & \text{if $op=-$} \\
+           \end{cases} \\
+      m^\delta &: \lambda s_1, s_2.\, \begin{aligned}
+             &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\fst~s_1) \cup (\fst~s_1)) \right\} \\
+             \times &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\snd~s_1) \cup (\snd~s_1)) \right\}
+           \end{aligned}
+    \end{aligned}\right.
+  \]
+  \caption{$\delta$-state based \textsf{PN-Counter} CRDT}
+\end{figure}
+
+
+\subsection{Example: G-Set}
+\label{sec:example-gset}
+
+\TODO[parameterized over a set $\mathcal{X}$]
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Set}_s(\mathcal{X}) = \left\{\begin{aligned}
+      S &: \mathcal{P}(\mathcal{X}) \\
+      s^0 &: \emptyset \\
+      q &: \lambda x. x \in s \\
+      u &: \lambda x. s \cup \{ x \} \\
+      m &: \lambda s_1, s_2. s_1 \cup s_2 \\
+    \end{aligned}\right.
+  \]
+  \caption{state-based \textsf{G-Set} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Set}_o(\mathcal{X}) = \left\{\begin{aligned}
+      S &: \mathcal{P}(\mathcal{X}) \\
+      s^0 &: \emptyset \\
+      q &: \lambda x. x \in s \\
+      t &: \lambda x. (\textsf{ins}, x) \\
+      u &: \lambda p. s \cup (\textsf{snd}~p) \\
+      m &: \lambda s_1, s_2. s_1 \cup s_2 \\
+    \end{aligned}\right.
+  \]
+  \caption{op-based \textsf{G-Set} CRDT}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \[
+    \textsf{G-Set}_\delta(\mathcal{X}) = \left\{\begin{aligned}
+      S &: \mathcal{P}(\mathcal{X}) \\
+      s^0 &: \emptyset \\
+      q &: \lambda x. x \in s \\
+      u &: \lambda x. \{ x \} \\
+      m &: \lambda s_1, s_2. s_1 \cup s_2 \\
+    \end{aligned}\right.
+  \]
+  \caption{$\delta$-state based \textsf{G-Set} CRDT}
+\end{figure}
+
 \section{Consistency Guarantees}
 \subsection{Causal Consistency}
 \subsection{Eventual Consistency}

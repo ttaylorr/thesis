@@ -7,7 +7,7 @@
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \RequirePackage{amsthm}
-\ifdefined\Print
+\ifdefined\;
 \RequirePackage{geometry}
 \RequirePackage[hidelinks]{hyperref}
 \else
@@ -46,6 +46,9 @@
 \newtheorem{example}{Example}[chapter]
 
 \newcommand*{\TODO}[1][]{\text{\color{red} TODO {#1}}}
+
+\newcommand*{\fst}{\ensuremath{\textsf{fst}}}
+\newcommand*{\snd}{\ensuremath{\textsf{snd}}}
 
 \makeatletter
 \def\@maketitle{%
