@@ -1,30 +1,138 @@
 \chapter{Overview}
 \label{chap:overview}
 
-This chapter describes our research goals, questions, and answers, as well as
-outlines our methodology in answering those questions. Our overarching goal is
-to show that several operation-based CRDT instances have suitable instantiations
-as both state- and $\delta$-state-based CRDTs, and that all implementations
-achieve strong eventual consistency. That is, that no matter what the CRDT type
-is, the different instantiations still achieve the same overall state given that
-they received the same set of messages over the network.
+This chapter outlines the specific research goals we have in verifying Strong
+Eventual Consistency in $\delta$-state CRDTs. We will describe our efforts
+building on top of the op-based CRDT verification framework from Gomes et.
+al~\citep{gomes17}. In addition, we'll discuss the unique way in which we view
+op-, state-, and $\delta$-state CRDTs in order to minimize the number of
+modifications we were required to make in order to write proofs for
+$\delta$-state CRDTs on top of a framework originally designed for op-based
+CRDTs. Finally, we will motivate a series of changes that we made to the
+existing network delivery semantics to strengthen our overall result.
 
-\section{Approach}
-To accomplish the above goal, we extend the library presented originally by
-Gomes et. al. in~\cite{gomes17}. In~\citep{gomes17}, the work was designed to
-show that several instantiations of operation-based CRDTs achieve strong
-eventual consistency. To that end, they provide a network and execution model,
-as well as instantiations of a variety of CRDT objects. Specifically, they
-instantiate the Observed-Remove Set (OR-set), the Replicated Growable Array
-(RGA), and the Increment-Decrement Counter (PN-counter).
+\section{op-based CRDTs as state-based}
+Our discussion begins by addressing the question of how we will use a library
+built to verify op-based CRDTs to verify $\delta$-state CRDTs. Our approach is
+to view the set of $\delta$-state CRDTs as a refinement of the set of
+state-based CRDTs, which are themselves in turn a refinement of the set of
+op-based CRDTs. In other words, we view op-based CRDTs as the \emph{most}
+expressive of the three categories of CRDTs that we have discussed so far.
+Before discussing the latter correspondence, we'll first begin by relating op-
+and state-based CRDTs to one another.
 
-One of their research goals was to show that the desired convergence property
-holds amongst these CRDT instances in all possible network executions. In other
-words, their proofs take into account dropping and reordering of messages, so
-that the convergence properties can be asserted in all network executions
-regardless of the underlying network quality in a real-world deployment.
+Consider some state-based CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
+set of states $S$, an initial state $s^0$, along with functions for querying the
+state ($q$), updating its state ($u$), and merging its state with the state of
+some other object $(m)$. Our question is to define a mapping $\phi$ as follows:
+\[
+  \phi_{\text{state} \to \text{op}} :
+    \underbrace{(S, s^0, q, u, m)}_{\text{state-based CRDTs}} \longrightarrow
+    \underbrace{(S, s^0, q, t, u)}_{\text{op-based CRDTs}}
+\]
+For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
+between state- and op-based CRDTs. If we had such a structure-preserving
+transformation, then we would be able to verify any state-based CRDT of our
+choosing using the framework from Gomes et. al. Without modification to the
+framework. Suppose that such a homomorphism exists. Then, the process for
+verifying a state-based CRDT using the op-based framework might look something
+like as follows:
+\begin{enumerate}
+  \item Take a state-based CRDT, say $C_s$, of interest for verification.
+  \item Convert the state-based CRDT into an op-based one by computing:
+    \[
+      C_o = \phi_{\text{state} \to \text{op}}(C_s)
+    \]
+  \item Use $C_o$ as input to the verification tool.
+\end{enumerate}
 
-\subsection{Motivating Network Relaxations}
+We'll now turn to describing the details of $\phi_{\text{state} \to \text{op}}$,
+which for convenience in this section, we'll abbreviate as simply
+$\phi$.\footnote{In the following section, we'll define a new homomorphism
+between state- and $\delta$-state based CRDTs, at which point we will
+distinguish between the two mappings when it is unclear which is being referred
+to.} To understand $\phi$, we'll consider how it maps the state $S$ (along with
+$s^0$ and $q$) separately from how it maps the update procedure $u$.
+
+\subsection{Mapping states under $\phi$}
+Let us begin our discussion with a consideration to how $\phi$ maps the state
+$S$ from a state-based CRDT to an op-based one. In practice, it would be
+unrealistic to treat the state space of a state-based CRDT as equal to that of
+its op-based counter-part. Doing so would discard one of the key benefits of
+op-based CRDTs over state-based ones, which is that they are often able to
+represent the same set of query-able states using simpler structures. For
+example, state-based counters (such as the $\textsf{G-Counter}_s$ and
+$\textsf{PN-Counter}_s$) often use a vector representation to represent the
+number of ``increment'' operations at each node. In this case, the query
+function is often represented as:
+\[
+  q = \lambda s.\, \sum_{i \in \mathcal{I}} s[i]
+\]
+where $S = \mathbb{N}^{|\mathcal{I}|}_+$, and $s_0$ is the all-zeros vector.
+This representation accommodates a relatively weak set of delivery semantics
+including dropping, reordering, and duplication of messages\footnote{This
+representation is also resilient to reordering of messages (though this
+restriction causes causal inconsistencies with respect to the state), but this
+is uninteresting for the example at hand.}. Because the counted values are
+non-decreasing (that is, $S$ is a lattice), we have that:
+\begin{itemize}
+  \item Dropped updates are eventually propagated through nodes that \emph{do}
+    receive them and join them locally (thus propagating them out further from
+    their own state), or else not considered at all since no nodes have received
+    them (in which case the preconditions for Strong Eventual Consistency are
+    not met).
+  \item Delayed and reordered updates are resolved identically no matter in what
+    order they are received because the pair-wise maximum of two vectors is
+    commutative.
+  \item Duplicated messages are resolved idempotently.
+\end{itemize}
+The size of this representation scales like $\mathcal{O}(|\mathcal{I}|)$, since
+vector has the same number of entries as there are participants in the system.
+We treat this linear scaling as a ``large'' state representation. Compare this
+to an op-based representation of the same object (i.e., $\textsf{G-Counter}_o$),
+which can represent its state using only $S = \mathbb{N}_+$, since updates are
+guaranteed to be delivered at most once (duplicating messages would cause states
+to appear which do not correspond to the number of times an update was performed
+in actuality, because the duplicate delivery would be indistinguishable from the
+case where two updates were performed).
+
+So, for remainder of this chapter, we treat $\phi$ as preserving the state
+space, and initial state under mapping. Since the query function $q$ is defined
+in terms of the state-space, $S$, we let $\phi$ preserve the implementation of
+$q$ under the mapping, too.
+
+\subsection{Mapping updates under $\phi$}
+Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
+address the implementation of $u$ and $m$ under mapping. Our guiding principle
+is the following theorem (which we state and discuss here, but have not
+mechanized):
+\begin{theorem}
+  Let $C_s$ be a state-based CRDT with $C_s = (S, s^0, q, u, m)$. Suppose that
+  $C_o$ is an op-based CRDT, which is defined as follows:
+  \[
+    C_0 = \left\{ \begin{aligned}
+      S_o &: S \\
+      s^0_o &: s^0 \\
+      q_o &: q \\
+      t_o &: \lambda p.\, u(s, p) \\
+      u_o &: \lambda s_1, s_2.\, m(s_1, s_2) \\
+    \end{aligned} \right.
+  \]
+  then, $C_o$ and $C_s$ reach equivalent states given equivalent updates and
+  delivery semantics.
+\end{theorem}
+\begin{proof}
+By simulation. Since $s^0_o = s^0$, both objects begin in the same state. Since
+$q_o = q$, if the state of $C_o$ and $C_s$ are equal, then $q_o$ will reflect as
+much. Finally, and update is prepared locally by computing the updated
+state-based representation. That update is applied both locally and at all
+replicas by merging the prepared state into $C_o$'s own state, preserving the
+equality.
+\end{proof}
+
+\section{state-based CRDTs as $\delta$-state based}
+
+\section{Network Relaxations}
 In our work, it was clear that the provided network model was not flexible
 enough to support an interesting result that state- or $\delta$-state
 CRDTs achieve strong eventual consistency. Specifically, our concern was that
@@ -165,7 +273,7 @@ CRDTs achieve strong eventual consistency no matter how many times), the network
 model originally presented in~\citep{gomes17} should be extended to remove the
 assumption that message identifiers are unique.
 
-\subsection{Network Relaxations}
+\subsection{Delivery Semantics}
 In their original network model, the authors of~\citep{gomes17} use an Isabelle
 \textit{locale} in order to parameterize varying instantiations of the network
 based on certain assumptions. They provide the following definition for the
@@ -232,11 +340,3 @@ the locale's instantiation:
   \item Otherwise, end the proof with the $\isakeyword{sorry}$ keyword and
     continue.
 \end{enumerate}
-
-\TODO[explain proof strategy, describe modified proofs, claim network
-strengthening, conclude section]
-
-\section{op- \& state-based CRDTs}
-\label{sec:op-state-unify}
-
-\subsection{state- \& $\delta$-state CRDTs}
