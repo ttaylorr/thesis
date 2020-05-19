@@ -24,13 +24,14 @@ and state-based CRDTs to one another.
 Consider some state-based CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
 set of states $S$, an initial state $s^0$, along with functions for querying the
 state ($q$), updating its state ($u$), and merging its state with the state of
-some other object $(m)$. Our question is to define a mapping $\phi$ as follows:
+some other object $(m)$. Our question is to define a mapping $\varphi$ as
+follows:
 \[
-  \phi_{\text{state} \to \text{op}} :
+  \varphi_{\text{state} \to \text{op}} :
     \underbrace{(S, s^0, q, u, m)}_{\text{state-based CRDTs}} \longrightarrow
     \underbrace{(S, s^0, q, t, u)}_{\text{op-based CRDTs}}
 \]
-For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
+For our purposes, we view $\varphi_{\text{state} \to \text{op}}$ as a homomorphism
 between state- and op-based CRDTs. If we had such a structure-preserving
 transformation, then we would be able to verify any state-based CRDT of our
 choosing using the framework from Gomes et. al. Without modification to the
@@ -41,21 +42,21 @@ like as follows:
   \item Take a state-based CRDT, say $C_s$, of interest for verification.
   \item Convert the state-based CRDT into an op-based one by computing:
     \[
-      C_o = \phi_{\text{state} \to \text{op}}(C_s)
+      C_o = \varphi_{\text{state} \to \text{op}}(C_s)
     \]
   \item Use $C_o$ as input to the verification tool.
 \end{enumerate}
 
-We'll now turn to describing the details of $\phi_{\text{state} \to \text{op}}$,
+We'll now turn to describing the details of $\varphi{\text{state} \to \text{op}}$,
 which for convenience in this section, we'll abbreviate as simply
-$\phi$.\footnote{In the following section, we'll define a new homomorphism
+$\varphi$.\footnote{In the following section, we'll define a new homomorphism
 between state- and $\delta$-state based CRDTs, at which point we will
 distinguish between the two mappings when it is unclear which is being referred
-to.} To understand $\phi$, we'll consider how it maps the state $S$ (along with
+to.} To understand $\varphi$, we'll consider how it maps the state $S$ (along with
 $s^0$ and $q$) separately from how it maps the update procedure $u$.
 
-\subsection{Mapping states under $\phi$}
-Let us begin our discussion with a consideration to how $\phi$ maps the state
+\subsection{Mapping states under $\varphi$}
+Let us begin our discussion with a consideration to how $\varphi$ maps the state
 $S$ from a state-based CRDT to an op-based one. In practice, it would be
 unrealistic to treat the state space of a state-based CRDT as equal to that of
 its op-based counter-part. Doing so would discard one of the key benefits of
@@ -96,13 +97,13 @@ to appear which do not correspond to the number of times an update was performed
 in actuality, because the duplicate delivery would be indistinguishable from the
 case where two updates were performed).
 
-So, for remainder of this chapter, we treat $\phi$ as preserving the state
+So, for remainder of this chapter, we treat $\varphi$ as preserving the state
 space, and initial state under mapping. Since the query function $q$ is defined
-in terms of the state-space, $S$, we let $\phi$ preserve the implementation of
+in terms of the state-space, $S$, we let $\varphi$ preserve the implementation of
 $q$ under the mapping, too.
 
-\subsection{Mapping updates under $\phi$}
-Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
+\subsection{Mapping updates under $\varphi$}
+Now that we have mapped $S$, $s^0$, and $q$ under $\varphi$, we still need to
 address the implementation of $u$ and $m$ under mapping. Our guiding principle
 is the following theorem (which we state and discuss here, but have not
 mechanized):
@@ -114,8 +115,8 @@ mechanized):
       S_o &: S \\
       s^0_o &: s^0 \\
       q_o &: q \\
-      t_o &: \lambda p.\, u(s, p) \\
-      u_o &: \lambda s_1, s_2.\, m(s_1, s_2) \\
+      t_o &: \lambda p.\, u(p...) \\
+      u_o &: \lambda s_2.\, m(s^t, s_2) \\
     \end{aligned} \right.
   \]
   then, $C_o$ and $C_s$ reach equivalent states given equivalent updates and
@@ -130,7 +131,54 @@ replicas by merging the prepared state into $C_o$'s own state, preserving the
 equality.
 \end{proof}
 
-\section{state-based CRDTs as $\delta$-state based}
+In other words, we decompose the \textit{update} function of a state-based CRDT
+into the \textit{prepare-update} and \textit{effect-update} functions of an
+op-based CRDT. Suppose that a set of parameters $p$ are used to invoke the
+update function $u$ of a state-based CRDT, i.e., that $u(p...)$ produces the
+desired updated state. Then the \textit{prepare-update} returns a serialized
+representation of $u(p...)$, which is to say that it returns the updated state.
+The \textit{effect-update} implementation then takes that representation and
+applies it by invoking the merge function $m$ with the effect representation and
+its own state to produce the new state.
+
+All of this is to say the first of two maxims: a state-based CRDT is an op-based
+CRDT where the operation is \emph{merge}.
+
+\section{$\delta$-state based CRDTs as state-based}
+Now that we have a procedure for representing a state-based CRDT as an
+equivalent op-based CRDT under the mapping $\varphi$, we only need to discover a
+similar such mapping from a $\delta$-state to state-based CRDT. Suppose that one
+exists, and call it $\varphi_{\delta \to \text{state}}$. Then, we could compose
+the two and obtain:
+\[
+  \varphi_{\delta \to \text{op}} =
+    \varphi_{\text{state} \to \text{op}} \circ
+    \varphi_{\delta \to \text{state}}
+\]
+Luckily, the mapping $\varphi_{\delta \to \text{state}}$ (which we now refer to
+as $\varphi$ out of convenience, disambiguating where necessary) is identity.
+This brings us to the second of the two maxims: all $\delta$-state CRDTs are
+themselves state-CRDTs.
+
+This is a crucial property of $\delta$-state CRDTs that we reason about now. Any
+$\delta$-state CRDT has a state-space which describes a lattice, just like
+state-based CRDTs. Likewise, they have query, update, and merge functions. The
+only difference between state- and $\delta$-state CRDTs is that the
+\emph{communicated} state is a \emph{fragment} of the overall state. Crucially,
+these fragments are themselves part of the lattice $S$, which makes them
+suitable for sending around and reasoning about as identically to state-based
+CRDTs.
+
+Therefore, we have a straightforward procedure for reasoning about
+$\delta$-state CRDTs in terms of op-based CRDTs, which is the following:
+\begin{enumerate}
+  \item Convert a $\delta$-state CRDT into a state-based CRDT by applying
+    $\varphi_{\delta \to \text{state}}$.
+  \item Convert that state-based CRDT into an op-based CRDT by applying
+    $\varphi_{\text{state} \to \text{op}}$.
+  \item Reason about the resulting op-based CRDT using the existing framework
+    and implementation.
+\end{enumerate}
 
 \section{Network Relaxations}
 In our work, it was clear that the provided network model was not flexible
