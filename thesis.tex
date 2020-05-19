@@ -7,7 +7,9 @@
 \begin{document}
   \pagenumbering{gobble}
 
-  \include{title}
+  \newgeometry{centering}
+    \include{title}
+  \restoregeometry
 
   \frontmatter
   \cleardoublepage
@@ -18,6 +20,7 @@
   \include{dedication}
 
   \tableofcontents
+  \listoffigures
 
   \mainmatter
   \include{introduction}
