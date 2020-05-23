@@ -9,6 +9,32 @@ Finally, we conclude with a discussion of the different levels of consistency
 guarantees that each CRDT variant offers, and rationalize which levels of
 consistency are appealing in certain situations.
 
+\section{Motivation}
+Conflict-free Replicated Datatypes (CRDTs) are a way to store several copies of
+a data-structure on multiple computers which form a distributed system. Each
+participant in the system can make modifications to the datatype without
+the need for explicit coordination with other participants. Their
+implementations are designed so that coordination-free updates which may
+conflict with one another always have a deterministic resolution. This allows
+multiple participants to query and modify their \emph{view} of the replicated
+datatype, without the traditional overhead and implementation burden that more
+stringent replication algorithms require.
+
+Here, we'll discuss four variants of CRDTs: state-based, op-based, pure
+op-based, and $\delta$-state based. Each of these variants achieve a consistent
+value by the use of different message types, and each likewise requires a
+different set of delivery semantics. In this chapter, we identify $\delta$-state
+CRDTs as achieving an appealing set of trade-offs among each of the four
+variants. We restate that they are able to achieve Strong Eventual Consistency
+(the best reasonably-achievable consistency guarantee for most CRDT
+applications) while maintaining both:
+\begin{itemize}
+  \item A relatively small payload size, as is the benefit of op-based CRDTs,
+    and
+  \item Relatively weak delivery semantics, as is the benefit of stat-based
+    CRDTs.
+\end{itemize}
+
 \section{Coordinated Replication}
 In a distributed system, it is common for more than one participant to need to
 have a \textit{view} of the same data. For example, multiple nodes may need to
@@ -52,20 +78,21 @@ distributed consensus:
   \label{def:consensus}
   An algorithm is said to solve distributed consensus if it has the following
   three safety requirements:
-  \begin{description}
-    \item[Non-triviality] The decided value must have been proposed by a
+  \begin{enumerate}
+    \item \emph{Non-triviality}: The decided value must have been proposed by a
       participant.
-    \item[Safety] Once a value has been decided, no other value will be decided.
-    \item[Safe learning] If a participant learns a value, it must learn the
-      decided value.
-  \end{description}
+    \item \emph{Safety}: Once a value has been decided, no other value will be
+      decided.
+    \item \emph{Safe learning}: If a participant learns a value, it must learn
+      the decided value.
+  \end{enumerate}
   In addition, it must satisfy the following two progress requirements:
-  \begin{description}
-    \item[Progress] Under previously agreed-upon liveness conditions, if a value
-      is proposed by a participant, then a value is eventually decided.
-    \item[Eventual learning] Under the same conditions as above, if a value is
-      decided, then that value must be eventually learned.
-  \end{description}
+  \begin{enumerate}
+    \item \emph{Progress}: Under previously agreed-upon liveness conditions, if
+      a value is proposed by a participant, then a value is eventually decided.
+    \item \emph{Eventual learning}: Under the same conditions as above, if a
+      value is decided, then that value must be eventually learned.
+  \end{enumerate}
 \end{definition}
 
 We summarize the two most popular and often-implemented algorithms for
@@ -80,7 +107,9 @@ participants in the system. This process is coordinated by an elected
 in order to drive the process forward. When a leader becomes unresponsive, other
 participants in the system begin an election process to replace the leader, and
 do so when a majority of participants (and the new leader) acknowledge the
-  change.
+change. In practice, \emph{multi-round} Paxos--that is, a repeated instantiation
+of \emph{single-decree} Paxos--takes the place of a ``log'' of agreed-upon
+events.
 
 \paragraph{Raft}
 Lest we omit another often-implemented consensus algorithm, we briefly discuss
@@ -98,15 +127,16 @@ mechanically verified in~\citep{wilcox15}.
 
 \subsection{Safety in Distributed Consensus Algorithms}
 
+\sloppy
 Both Raft and Paxos are notoriously difficult to implement correctly in
 practice~\citep{howard20}. Distributed consensus algorithms are often the
 subject of undergraduate-level courses in networks and distributed systems.
 Often, commercially-available implementations of these algorithms are built into
-off the shelf solutions, such as Apache Zookeeper and CoreOS's
+off the shelf solutions~\citep{etcd,zookeeper}.
 
-It is a natural question to ask why these algorithms are so notoriously
-difficult to implement in practice. Individually, the properties
-in Definition~\ref{def:consensus} seem reasonably in their own right. We propose
+Therefore, it is a natural question to ask why these algorithms are so
+notoriously difficult to implement in practice. Individually, the properties in
+Definition~\ref{def:consensus} seem reasonably in their own right. We propose
 that it is the safety property (that once a value has been decided, no other
 values will be decided) that makes implementing these algorithms correctly so
 difficult in practice. In essence, coordinating the proposals individual
@@ -124,7 +154,7 @@ practice, and are substantially easier to reason about.
 \section{state-based CRDTs}
 \label{sec:state-based-crdts}
 We begin with a discussion of state-based CRDTs from their inception
-in~\citep{shapario11}. A state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
+in~\citep{shapiro11}. A state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
 individual replica of a state-based CRDT is at some state $s^i \in S$ for $i \ge
 0$, and is initially $s^0$. The value may be queried by any client or other
 replica by invoking $q$. It may be updated with $u$, which has a unique type per
@@ -149,9 +179,9 @@ detail that is left to individual CRDTs, and is specific to their use-case. For
 e.g., it may be that a vector-counter CRDT's implementation of $q$ is
 something like:
 \[
-  q : S \mapsto \mathbb{N} = \sum_{i \in \mathbb{I}} s(i)
+  q : S \mapsto \mathbb{N} = \sum_{i \in \mathcal{I}} s(i)
 \]
-In this example, let $S = \mathbb{N}^{|\mathbb{I}|}_+$, where $\mathbb{I}$ is
+In this example, let $S = \mathbb{N}^{|\mathcal{I}|}_+$, where $\mathcal{I}$ is
 the set of replicas, and $s(i)$ returns the $i$th index of the state vector.
 
 We'll focus our attention for now on the implementation of $m$, which is the
@@ -161,14 +191,15 @@ assume that:
 \[
   m(s_1, s_2) = s_1 \sqcup s_2
 \]
-and that whenever a CRDT replica $r_1$ at state $s_1$ receives an update from
-another replica $r_2$ at state $s_2$, that $r_1$ attains a new state $s_1' =
-m(s_1, s_2)$. This process, in addition to each replica periodically
-broadcasting an update which contains its current state, is carried on
-continually, and $m$ is invoked whenever a new state is received. That is, each
-replica is evolving over time in response to outside instruction, and in turn
-these updates cause internal state transitions, which themselves cause those new
-states to be broadcasted and eventually joined at every other replica.
+for some join semi-lattice with join operation $\sqcup$, and that whenever a
+CRDT replica $r_1$ at state $s_1$ receives an update from another replica
+$r_2$ at state $s_2$, that $r_1$ attains a new state $s_1' = m(s_1, s_2)$.
+This process, in addition to each replica periodically broadcasting an update
+which contains its current state, is carried on continually, and $m$ is
+invoked whenever a new state is received. That is, each replica is evolving
+over time in response to outside instruction, and in turn these updates cause
+internal state transitions, which themselves cause those new states to be
+broadcasted and eventually joined at every other replica.
 
 The $\sqcup$ operator has three mathematical properties that make it an
 appealing choice for joining states together as in $m$. These are its
@@ -176,11 +207,12 @@ appealing choice for joining states together as in $m$. These are its
 any states $s_1$, $s_2$, and $s_3$, that:
 \begin{itemize}
   \item The operator is \emph{commutative}, i.e., that $s_1 \sqcup s_2 = s_2
-    \sqcup s_1$.
+    \sqcup s_1$, or that order does not matter.
   \item The operator is \emph{associative}, i.e., that $s_1 \sqcup (s_2 \sqcup
-    s_3) = (s_1 \sqcup s_2) \sqcup s_3$.
+    s_3) = (s_1 \sqcup s_2) \sqcup s_3$, or that grouping of arguments does not
+    matter.
   \item Finally, the operator is \emph{idempotent}, i.e., that $s_1 \sqcup s_1 =
-    s_1$.
+    s_1$, or that repeated updates reach a fixed point.
 \end{itemize}
 
 These mathematical properties correspond to real-world constraints that often
@@ -207,8 +239,8 @@ for any choice of $\pi$, because
 \[
   s_{\pi(1)} \sqcup \cdots \sqcup s_{\pi(n)} = s_1 \sqcup \cdots \cdots s_n
 \]
-which follows from the fact that $\sqcup$ is commutative, and can be shown
-inductively on the number of updates, $n$.
+which follows from the fact that $\sqcup$ is commutative. This can be shown
+inductively on the number of updates, $n$, given the commutativity of $\sqcup$.
 
 Next, it is often common for packets to be duplicated in transit over a network.
 That is, even though a packet may be sent from a source only once, it may be
@@ -225,24 +257,11 @@ replicas of a state-based CRDT reside on a network with, say, high latency, or
 it is otherwise undesirable to send more messages on the network than is
 necessary. Because associativity implies that the grouping of updates is
 arbitrary, a replica can maintain a \textit{set} of pending updates, and
-periodically\footnote{``Periodically'' is arbitrary and an implementation
-choice, but it would be easy to imagine that this could be interpreted as
-whenever the set reaches a certain size, and/or after a certain amount of time
-has passed since flushing the set of pending updates.} send that set to other
-replicas by first folding $\sqcup$ over it and sending a single update.
-
-Although commutativity and idempotency receive the greatest share of attention
-within CRDT research, associativity is most often used in the area of
-$\delta$-state CRDTs. We will discuss a couple of applications of the
-associative property of $\sqcup$ in detail in Chapter~\ref{chap:future-work},
-and overview them briefly now. The associativity of updates means that
-$\delta$-state CRDTs means that these objects can form an \emph{delta interval},
-say, $\Delta^a_b$, which comprises the updates on the interval of time $[a,b)$.
-When certain restrictions on when an interval $\Delta^a_b$ may be flushed based
-on the values of $a$, $b$, other properties may be attained such as causal
-consistency~\citep{almedia18}. In this thesis, we do not investigate this
-particular application further, although it appears to be a promising future
-direction.
+periodically\footnote{``Periodically'' is arbitrary and is left up to the
+implementation, but it would be easy to imagine that this could be interpreted
+as whenever the set reaches a certain size, and/or after a certain amount of
+time has passed since flushing the set of pending updates.} send that set to
+other replicas by first folding $\sqcup$ over it and sending a single update.
 
 \section{op-based CRDTs}
 \label{sec:op-based-crdts}
@@ -260,13 +279,11 @@ baquero17}.
 An op-based CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
 Section~\ref{sec:state-based-crdts}, $S$, $s^0$, and $q$, retain their
 original meaning (that is, the state set, an initial state, a query function,
-and an update function). It is temping to say that the op-based $u$ retains the
-same meaning as the state-based $u$, however it does not. In op-based CRDTs,
-the pair $(t,u)$ takes the place of the $m$ merging function from state-based
-CRDTs. $t$ and $u$ correspond to \textit{prepare-update} and
-\textit{effect-update}, respectively. When an update is made by a caller (say,
-for example, incrementing the value of an op-based CRDT counter), it is done in
-two phases~\citep{shapiro11}:
+and an update function). In op-based CRDTs, the pair $(t,u)$ takes the place of
+the $m$ merging function from state-based CRDTs. $t$ and $u$ correspond to
+\textit{prepare-update} and \textit{effect-update}, respectively. When an update
+is made by a caller (say, for example, incrementing the value of an op-based
+CRDT counter), it is done in two phases~\citep{shapiro11}:
 \begin{enumerate}
   \item First, the \textit{prepare-update} implementation $t$ is applied at the
     replica receiving the update. $t$ is side-effect free, and prepares a
@@ -293,7 +310,7 @@ op-based CRDTs:
 
 \begin{definition}[op-based Causal History~\citep{shapiro11}]
 An object's casual history $C = \{ c_1, \ldots, c_n \}$ is defined as follows.
-Initially, $c_i^0 = \emptyset$ for all $i \in \mathbb{I}$. If the $k$th method
+Initially, $c_i^0 = \emptyset$ for all $i \in \mathcal{I}$. If the $k$th method
 execution is idempotent (that is, it is either $q$ or $t$), then the causal
 history remains unchanged in the $k$th step, i.e., that $c_i^k = c_i^{k-1}$. If
 the execution at $k$ is non-idempotent (i.e., it is $u$), then $c_i^{k} =
@@ -312,27 +329,29 @@ applying them in either order is the same. That is, $s \circ u \circ u' \equiv s
 
 They claim that having commutativity for concurrent operations as well as an
 in-order delivery relation $P$ for comparable updates is sufficient to prove
-that op-based CRDTs achieve SEC.
+that op-based CRDTs achieve Strong Eventual Consistency.
 
 \subsection{Pure op-based CRDTs}
 
-For completeness in this area, we briefly discuss the work of Baquero and his
-co-authors in developing \textit{pure} op-based CRDTs~\citep{baquero17}. Pure
-op-based CRDTs address a highly-interpretable definition of $t$ and $u$ to
-restrict the payload size of the messages that these operations generate and
-require, respectively. In particular, they point out that op-based CRDTs may
-behave as if they were state-based CRDTs when $t$ encodes the state $s^k$ and
-$u$ acts like a full join on the lattice $S$.
+For completeness, we briefly discuss the work of Baquero and his co-authors in
+developing \emph{pure} op-based CRDTs~\citep{baquero17}. Although we devote some
+time to their discussion, we do not investigate pure op-based CRDTs further in
+this thesis. Pure op-based CRDTs address a highly-interpretable definition of
+$t$ and $u$ to restrict the payload size of the messages that these operations
+generate and require, respectively. In particular, they point out that op-based
+CRDTs may behave as if they were state-based CRDTs when $t$ encodes the state
+$s^k$ and $u$ acts like a full join on the lattice $S$.
 
 A particular advantage of op-based CRDTs over their state-based counter-parts is
 that they are generally believed to require less overall bandwidth to
 communicate updates. The key trade-off is that op-based CRDTs require a much
 stronger delivery semantics $P$ (in particular, $P$ must provide in-order and
-at-most-once delivery of messages) in order to attain SEC. Of course, treating
-an op-based CRDT as a state-based one eliminates many of these benefits.
+at-most-once delivery of messages) in order to attain Strong Eventual
+Consistency. Of course, treating an op-based CRDT as a state-based one
+eliminates many of these benefits.
 
-To address this issue, Baquero and his co-authors treat the state-space $S$ of
-a \emph{pure} op-based CRDT as instead a poset of
+To address this issue, Baquero and his co-authors instead treat the state-space
+$S$ of a \emph{pure} op-based CRDT as a poset of
 operations\footnote{Incomparable items are generally interpreted as concurrent
 operations performed on a pure op-based CRDT}, where the state is interpreted as
 applying elements in the poset order. They couple this with the additional
@@ -360,8 +379,8 @@ states and message payloads that form a join semi-lattice. This endows the
 $\delta$-state CRDT with a commutative, associative, and idempotent \emph{join}
 operator, as before. Likewise, this means that the $\delta$-state CRDT supports
 weak delivery semantics, such as delayed, dropped\footnote{In this thesis, we
-consider dropped messages as having been delayed for an infinite amount of time.
-This allows us to reason about a smaller set of delivery semantics.}, reordered,
+consider dropped messages as having been delayed for an infinite amount of time,
+allowing us to reason about a smaller set of delivery semantics.}, reordered,
 and duplicated message delivery.
 
 Unlike a state-based CRDT, however, $\delta$-state CRDTs do not send their
@@ -369,7 +388,7 @@ internal state $s^k$ after an update at time $k-1$. With sufficient
 conditions\footnote{Effectively, sufficient conditions mean an internal state
 whose updates can be represented as ``smaller'' items within the set of
 reachable states. For example, to communicate the operation ``insert element $x$
-into a set'', send the unitary set $\{x\}$ instead of $S \cup \{ x \}$.}, this
+into a set'', send the singleton set $\{x\}$ instead of $S \cup \{ x \}$.}, this
 means that:
 \begin{itemize}
   \item $\delta$-state CRDTs support the same weak requirements from the network
@@ -397,7 +416,7 @@ instantiations of the Grow-Only Counter (G-Counter), Positive-Negative Counter
 (PN-Counter), and the Grow-Only Set (G-Set) for state-, op-, and
 $\delta$-state-based CRDTs. In each of the below, we assume that $\mathcal{I}$
 refers to the set of node identifiers corresponding to the active
-replicas\footnote{In this thesis, we consider $\mathbb{I}$ to be fixed during
+replicas\footnote{In this thesis, we consider $\mathcal{I}$ to be fixed during
 execution; that is, we do not support addition or deletion of replicas.}. For
 now, we assume that this set is fixed.
 
@@ -560,6 +579,19 @@ now, we assume that this set is fixed.
 
 \section{Consistency Guarantees}
 \subsection{Causal Consistency}
+Although commutativity and idempotency receive the greatest share of attention
+within CRDT research, associativity is most often used in the area of
+$\delta$-state CRDTs. We will discuss a couple of applications of the
+associative property of $\sqcup$ in detail in Chapter~\ref{chap:future-work},
+and overview them briefly now. The associativity of updates means that
+$\delta$-state CRDTs means that these objects can form an \emph{delta interval},
+say, $\Delta^a_b$, which comprises the updates on the interval of time $[a,b)$.
+When certain restrictions on when an interval $\Delta^a_b$ may be flushed based
+on the values of $a$, $b$, other properties may be attained such as causal
+consistency~\citep{almedia18}. In this thesis, we do not investigate this
+particular application further, although it appears to be a promising future
+direction.
+
 \subsection{Eventual Consistency}
 \subsection{Strong Eventual Consistency}
 \section{Network Semantics}
