@@ -35,7 +35,7 @@ program is written to be multi-threaded, then the threads must coordinate
 amongst themselves by using mutexes or communication channels to avoid
 \textit{race conditions}.
 
-The same challenge exists wben a system is distributed at the hardware and
+The same challenge exists when a system is distributed at the hardware and
 machine level, rather than amongst multiple threads running on a single piece of
 hardware. The challenge, however, is made more difficult by the fact that the
 communication overhead is far higher between separate pieces of hardware than
@@ -44,7 +44,7 @@ between two threads.
 This thesis focuses on datatypes by which computation can be coordinated across
 multiple machines. In particular, we formalize a set of consistently guarantees
 (namely, Strong Eventual Consistency) over a class of replicated datatypes,
-$\delta$-Conflict-Free Replicated Datatypes (CRDTS). We describe the
+$\delta$-Conflict-Free Replicated Datatypes (\CRDTs). We describe the
 preliminaries necessary to contextualize the body of this work in the following
 section.
 
@@ -59,9 +59,9 @@ request}.
 These datatypes operate in such a way so as to both avoid conflict between
 concurrent updates, and to avoid locking and coordination overhead. These
 datatypes are referred to as conflict-free replicated datatypes, hereafter,
-CRDTs~\citep{shapiro11}. CRDTs are said to achieve \textit{strong eventual
-consistency} (SEC) which is to say that they achieve a stronger form of
-\textit{eventual consistency} (EC). We summarize the definitions of eventual-
+\CRDTs~\citep{shapiro11}. \CRDTs are said to achieve \textit{strong eventual
+consistency} (\SEC) which is to say that they achieve a stronger form of
+\textit{eventual consistency} (\EC). We summarize the definitions of eventual-
 and strong-eventual consistency from~\cite{shapiro11}.
 
 \begin{definition}[Eventual Consistency]
@@ -85,27 +85,27 @@ and strong-eventual consistency from~\cite{shapiro11}.
   \end{itemize}
 \end{definition}
 
-Broadly speaking, there are two classes of CRDTs, which we refer to as the op-
+Broadly speaking, there are two classes of \CRDTs, which we refer to as the op-
 and state-based variants. We will provide formal definitions for each of the two
 classes in due time (particularly, we do so in Chapter~\ref{chap:background}),
 but for now it is sufficient to distinguish the two as sending different kinds
-of messages\footnote{It is sufficient to consider the op-based CRDT as sending
+of messages\footnote{It is sufficient to consider the op-based \CRDT as sending
 representations of actions: increment some value, place an item in a set, and so
-on. On the other hand, it suffices to consider state-based CRDTs as sending the
+on. On the other hand, it suffices to consider state-based \CRDTs as sending the
 representation of the effect of that action: my counter is now $x$, my set
-includes these elements, and so on. state-based CRDTs are furthermore equipped
+includes these elements, and so on. state-based \CRDTs are furthermore equipped
 with a $\sqcup$ which is capable of merging two states together, and is
 discussed in detail in Section~\ref{sec:background-state-based-crdts}.}.
 
-We present brief definitions of op- and state-based CRDTs based
+We present brief definitions of op- and state-based \CRDTs based
 on~\citep{baquero14}:
 
 \begin{definition}[Operation-based Conflict-Free Replicated Datatype (op-based
-CRDT)]
-  op-based CRDTs apply updates in two phases:
+\CRDT)]
+  op-based \CRDTs apply updates in two phases:
   \begin{enumerate}
     \item First, an operation is \textit{prepared} locally. At this phase, the
-      op-based CRDT combines the operation with the current state to send a
+      op-based \CRDT combines the operation with the current state to send a
       representation of the update to other replicas.
     \item Then, the represented operation is applied to other replicas using
       \textit{effect}, where \textit{effect} is commutative for concurrent
@@ -114,8 +114,8 @@ CRDT)]
 \end{definition}
 
 \begin{definition}[State-based Conflict-Free Replicated Datatype (state-based
-CRDT)]
-  state-based CRDTs only apply updates to their local state, and periodically
+\CRDT)]
+  state-based \CRDTs only apply updates to their local state, and periodically
   send serialized representations of the contents of their state to other
   replicas.
 
@@ -124,7 +124,7 @@ CRDT)]
   $s_1 \sqsubseteq s_1 \sqcup s_2$ and $s_2 \sqsubseteq s_1 \sqcup s_2$ hold for
   commutative, associative, and idempotent $\sqcup$).
 
-  To achieve convergence, state-based CRDTs periodically send their state to
+  To achieve convergence, state-based \CRDTs periodically send their state to
   other replicas, which then replace their own state by joining the received
   state into their own.
 \end{definition}
@@ -132,36 +132,36 @@ CRDT)]
 \section{op- and state-based trade-offs}
 
 These two classes are distinguished from one another based on their strengths
-and weaknesses. In one sense, op- and state-based CRDTs form a kind of a dual,
+and weaknesses. In one sense, op- and state-based \CRDTs form a kind of a dual,
 where they trade off strong network guarantees for message payload
 size~\citep{baquero14}.
 
-Because the state-based CRDT needs to send a representation of its entire state,
+Because the state-based \CRDT needs to send a representation of its entire state,
 it often requires a significant amount of network bandwidth to propagate large
 messages~\citep{almedia18}. For example, in the state-based vector counter
 (which we will describe in detail in Section~\ref{sec:example-gcounter}), the
 payload size grows as a linear function of the number of replicas. In return for
-this large payload size, state-based CRDTs are able to achieve strong eventual
+this large payload size, state-based \CRDTs are able to achieve strong eventual
 consistency even in network that are allowed to drop, reorder, and duplicate
 messages.
 
-On the other hand, op-based CDRTs require relatively little network bandwidth to
-send a notification of a single update (typically the representation generated
-in the \textit{prepare} stage is dwarfed by the typical payload size of a
-state-based CRDT), but in exchange demand that the network deliver messages
-in-order for sequential (comparable) updates and at-most-once~\citep{shapiro11}.
+On the other hand, op-based \CRDTs require relatively little network bandwidth
+to send a notification of a single update (typically the representation
+generated in the \textit{prepare} stage is dwarfed by the typical payload size
+of a state-based \CRDT), but in exchange demand that the network deliver
+messages in-order for sequential (comparable) updates and
+at-most-once~\citep{shapiro11}.
 
 Significant work in this area~\cite{almedia18, enes18, cabrita17, vanDerLinde16}
 has focused on mediating these two extremes. This line of research (particularly
-in~\citep{almedia18}) has identified $\delta$-CRDTs---a variant of the
-state-based CRDT which we discuss in
-Section~\ref{sec:background-state-based-crdts}---as an alternative which
-occupies a satisfying position between the two extremes. $\delta$-CRDTs have,
-in general, small payload size (thus requiring a similar amount of bandwidth as
-messages sent and received from op-based CRDTs), but tolerate the same network
-deficiencies as state-based CRDTs. This combination of properties makes them an
-appealing alternative to traditional state- and op-based CRDTs, and places
-interest in studying their convergence properties.
+in~\citep{almedia18}) has identified $\delta$-\CRDTs---a variant of the
+state-based \CRDT which we discuss in Section~\ref{sec:state-based-crdts}---as an
+alternative which occupies a satisfying position between the two extremes.
+$\delta$-\CRDTs have, in general, small payload size (thus requiring a similar
+amount of bandwidth as messages sent and received from op-based \CRDTs), but
+tolerate the same network deficiencies as state-based \CRDTs. This combination of
+properties makes them an appealing alternative to traditional state- and
+op-based \CRDTs, and places interest in studying their convergence properties.
 
 \section{Contributions}
 
@@ -170,7 +170,7 @@ of formally verified proofs in Isabelle~\citep{wenzel02} that re-establish the
 main result of~\citep{almedia18}, which we re-state here:
 
 \begin{theorem}[Almedia, Shoker, Baquero, '18]
-  Consider a set of replicas of a $\delta$-CRDT object, replica $i$ evolving
+  Consider a set of replicas of a $\delta$-\CRDT object, replica $i$ evolving
   along a sequence of states $X_i^0 = \bot$, $X_i^1=\ldots$, , each replica
   performing delta-mutations of the form $m^\delta_{i,k}(X^k_i)$ at some subset
   of its sequence of states, and evolving by joining the current state either
@@ -181,20 +181,20 @@ main result of~\citep{almedia18}, which we re-state here:
 \end{theorem}
 
 In other words, we rely on the work of~\citep{gomes17} in order to build a
-portfolio of $\delta$-state CRDTs as in~\citep{almedia18} and show that even
+portfolio of $\delta$-state \CRDTs as in~\citep{almedia18} and show that even
 under weak network guarantees\footnote{We inherit dropping and reordering of
 messages from the original work of~\citep{gomes17}, but further weaken the
 network model by also allowing messages to be duplicated} these $\delta$-state
-CRDTs still achieve strong eventual consistency.
+\CRDTs still achieve strong eventual consistency.
 
-Our verification efforts yielded a portfolio of different $\delta$-state CRDTs
+Our verification efforts yielded a portfolio of different $\delta$-state \CRDTs
 (the grow-only counter (GCounter) and set (GSet), as well as composite variants
 such as the positive-negative counter (PN-Counter), and the observed-remove set
 (OR-set)). Our key idea guiding these verification efforts is to treat op- and
-state-based CRDTs similarly by modeling state-based CRDTs as op-based where the
+state-based \CRDTs similarly by modeling state-based \CRDTs as op-based where the
 operation is the join provided by the semi-lattice\footnote{This approach is
 described in detail in Section~\ref{sec:op-state-unify}}. We use this idea to
-build state- and $\delta$-state CRDTs on top of the library provided
+build state- and $\delta$-state \CRDTs on top of the library provided
 in~\citep{gomes17}, and show that the
 $strong{\isacharunderscore}eventual{\isacharunderscore}consistency$ locale can
 still be instantiated over this portfolio, even when the underlying $network$
@@ -205,19 +205,19 @@ The reminder of this thesis is ordered as follows:
 \begin{itemize}
   \item In Chapter~\ref{chap:background}, we summarize existing research in the
     broader realm of conflict-free replicated datatypes. We present formal
-    definitions of op- and state-based CRDTs, and conduct a thorough discussion
+    definitions of op- and state-based \CRDTs, and conduct a thorough discussion
     of their relative strengths and weaknesses. Likewise, we present a summary
-    of some work in the area of $\delta$-state CRDTs, and present its strengths.
+    of some work in the area of $\delta$-state \CRDTs, and present its strengths.
   \item In Chapter~\ref{chap:overview}, we outline our specific research goals,
     as well as the work in~\citep{almedia18} upon which much of our work is
     built. We lay out our specific approach, as well as some of the key insights
     that guided our proof strategy.
   \item In Chapter~\ref{chap:results}, we discuss the outcome of our approach by
-    presenting a portfolio of successfully-verified $\delta$-state CRDTs, as
+    presenting a portfolio of successfully-verified $\delta$-state \CRDTs, as
     well as describe our efforts in weakening the network model in order to
     verify these objects over a non-trivial set of network behaviors.
   \item We conclude in Chapter~\ref{chap:future-work} by suggesting future
     research directions. We suggest some possible areas where formalizing some
     of our proofs may be fruitful, as well as future approaches that would be of
-    interest to the $\delta$-state CRDT research community.
+    interest to the $\delta$-state \CRDT research community.
 \end{itemize}

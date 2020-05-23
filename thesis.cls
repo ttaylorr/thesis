@@ -1,18 +1,20 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{thesis}
 
-\LoadClass[12pt]{book}
+\LoadClass[12pt,twoside,openright,draft]{report}
 
 \RequirePackage{amsfonts}
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \RequirePackage{amsthm}
-\ifdefined\;
+\ifdefined\forprint
 \RequirePackage{geometry}
 \RequirePackage[hidelinks]{hyperref}
-\else
-\RequirePackage[margin=1in]{geometry}
-\RequirePackage{hyperref}
+\fi
+\ifdefined\forweb
+\RequirePackage[margin=1.25in]{geometry}
+\RequirePackage[pdfborder={0 0
+0},colorlinks=true,citecolor=purple,linkcolor=violet]{hyperref}
 \fi
 \RequirePackage{isabelle}
 \RequirePackage[square,sort,comma,numbers]{natbib}
@@ -20,6 +22,7 @@
 \RequirePackage{graphicx}
 \RequirePackage{isabelle,isabellesym}
 \RequirePackage{xcolor}
+\RequirePackage{xspace}
 
 \isabellestyle{it}
 
@@ -39,7 +42,7 @@
 \newcommand*{\supervisor}[1]{\gdef\@supervisor{#1}}
 
 \bibliographystyle{abbrvnat}
-\setcitestyle{authoryear}
+\setcitestyle{numbers}
 
 \newtheorem{definition}{Definition}[chapter]
 \newtheorem{theorem}{Theorem}[chapter]
@@ -50,8 +53,29 @@
 \newcommand*{\fst}{\ensuremath{\textsf{fst}}}
 \newcommand*{\snd}{\ensuremath{\textsf{snd}}}
 
+\newcommand*{\CRDT}{\textsf{CRDT}\xspace}
+\newcommand*{\CRDTs}{\textsf{CRDTs}\xspace}
+\newcommand*{\EC}{\textsf{EC}\xspace}
+\newcommand*{\SEC}{\textsf{SEC}\xspace}
+
 \makeatletter
 \def\@maketitle{%
   \newpage
 }
+
+\newcommand\frontmatter{%
+  \cleardoublepage
+  \pagenumbering{roman}}
+
+\newcommand\mainmatter{%
+  \cleardoublepage
+  \pagenumbering{arabic}}
+
+\newcommand\backmatter{%
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \fi}
+
 \makeatother

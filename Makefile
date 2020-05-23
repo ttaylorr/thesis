@@ -10,22 +10,22 @@ SECTIONS += overview.tex
 SECTIONS += results.tex
 SECTIONS += title.tex
 
-FIGURES =
-FIGURES += figures/1/semi-lattice.pdf
-
 ISABELLE ?= /Applications/Isabelle2019.app/Isabelle/bin/isabelle
 ISABELLE_STY = comment.sty isabelle.sty isabellesym.sty pdfsetup.sty railsetup.sty
 
 $(ISABELLE_STY) :
 	$(ISABELLE) latex -o sty
 
-thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
-	pdflatex -shell-escape $^
-	bibtex $(patsubst %.tex,%,$<)
-	pdflatex -output-directory $(dir $@) $<
+ifdef WEB
+PREAMBLE=\newcommand{\forweb}{1}
+else
+PREAMBLE=\newcommand{\forprint}{1}
+endif
 
-%.pdf : %.tex
-	pdflatex -output-directory $(dir $@) $<
+thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
+	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
+	bibtex $(patsubst %.tex,%,$<)
+	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 
 .PHONY : clean
 clean:

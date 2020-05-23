@@ -2,45 +2,45 @@
 \label{chap:overview}
 
 This chapter outlines the specific research goals we have in verifying Strong
-Eventual Consistency in $\delta$-state CRDTs. We will describe our efforts
-building on top of the op-based CRDT verification framework from Gomes et.
+Eventual Consistency in $\delta$-state \CRDTs. We will describe our efforts
+building on top of the op-based \CRDT verification framework from Gomes et.
 al~\citep{gomes17}. In addition, we'll discuss the unique way in which we view
-op-, state-, and $\delta$-state CRDTs in order to minimize the number of
+op-, state-, and $\delta$-state \CRDTs in order to minimize the number of
 modifications we were required to make in order to write proofs for
-$\delta$-state CRDTs on top of a framework originally designed for op-based
-CRDTs. Finally, we will motivate a series of changes that we made to the
+$\delta$-state \CRDTs on top of a framework originally designed for op-based
+\CRDTs. Finally, we will motivate a series of changes that we made to the
 existing network delivery semantics to strengthen our overall result.
 
-\section{op-based CRDTs as state-based}
+\section{op-based \CRDTs as state-based}
 Our discussion begins by addressing the question of how we will use a library
-built to verify op-based CRDTs to verify $\delta$-state CRDTs. Our approach is
-to view the set of $\delta$-state CRDTs as a refinement of the set of
-state-based CRDTs, which are themselves in turn a refinement of the set of
-op-based CRDTs. In other words, we view op-based CRDTs as the \emph{most}
-expressive of the three categories of CRDTs that we have discussed so far.
+built to verify op-based \CRDTs to verify $\delta$-state \CRDTs. Our approach is
+to view the set of $\delta$-state \CRDTs as a refinement of the set of
+state-based \CRDTs, which are themselves in turn a refinement of the set of
+op-based \CRDTs. In other words, we view op-based \CRDTs as the \emph{most}
+expressive of the three categories of \CRDTs that we have discussed so far.
 Before discussing the latter correspondence, we'll first begin by relating op-
-and state-based CRDTs to one another.
+and state-based \CRDTs to one another.
 
-Consider some state-based CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
+Consider some state-based \CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
 set of states $S$, an initial state $s^0$, along with functions for querying the
 state ($q$), updating its state ($u$), and merging its state with the state of
 some other object $(m)$. Our question is to define a mapping $\varphi$ as
 follows:
 \[
   \varphi_{\text{state} \to \text{op}} :
-    \underbrace{(S, s^0, q, u, m)}_{\text{state-based CRDTs}} \longrightarrow
-    \underbrace{(S, s^0, q, t, u)}_{\text{op-based CRDTs}}
+    \underbrace{(S, s^0, q, u, m)}_{\text{state-based \CRDTs}} \longrightarrow
+    \underbrace{(S, s^0, q, t, u)}_{\text{op-based \CRDTs}}
 \]
 For our purposes, we view $\varphi_{\text{state} \to \text{op}}$ as a homomorphism
-between state- and op-based CRDTs. If we had such a structure-preserving
-transformation, then we would be able to verify any state-based CRDT of our
+between state- and op-based \CRDTs. If we had such a structure-preserving
+transformation, then we would be able to verify any state-based \CRDT of our
 choosing using the framework from Gomes et. al. Without modification to the
 framework. Suppose that such a homomorphism exists. Then, the process for
-verifying a state-based CRDT using the op-based framework might look something
+verifying a state-based \CRDT using the op-based framework might look something
 like as follows:
 \begin{enumerate}
-  \item Take a state-based CRDT, say $C_s$, of interest for verification.
-  \item Convert the state-based CRDT into an op-based one by computing:
+  \item Take a state-based \CRDT, say $C_s$, of interest for verification.
+  \item Convert the state-based \CRDT into an op-based one by computing:
     \[
       C_o = \varphi_{\text{state} \to \text{op}}(C_s)
     \]
@@ -50,17 +50,17 @@ like as follows:
 We'll now turn to describing the details of $\varphi{\text{state} \to \text{op}}$,
 which for convenience in this section, we'll abbreviate as simply
 $\varphi$.\footnote{In the following section, we'll define a new homomorphism
-between state- and $\delta$-state based CRDTs, at which point we will
+between state- and $\delta$-state based \CRDTs, at which point we will
 distinguish between the two mappings when it is unclear which is being referred
 to.} To understand $\varphi$, we'll consider how it maps the state $S$ (along with
 $s^0$ and $q$) separately from how it maps the update procedure $u$.
 
 \subsection{Mapping states under $\varphi$}
 Let us begin our discussion with a consideration to how $\varphi$ maps the state
-$S$ from a state-based CRDT to an op-based one. In practice, it would be
-unrealistic to treat the state space of a state-based CRDT as equal to that of
+$S$ from a state-based \CRDT to an op-based one. In practice, it would be
+unrealistic to treat the state space of a state-based \CRDT as equal to that of
 its op-based counter-part. Doing so would discard one of the key benefits of
-op-based CRDTs over state-based ones, which is that they are often able to
+op-based \CRDTs over state-based ones, which is that they are often able to
 represent the same set of query-able states using simpler structures. For
 example, state-based counters (such as the $\textsf{G-Counter}_s$ and
 $\textsf{PN-Counter}_s$) often use a vector representation to represent the
@@ -108,8 +108,8 @@ address the implementation of $u$ and $m$ under mapping. Our guiding principle
 is the following theorem (which we state and discuss here, but have not
 mechanized):
 \begin{theorem}
-  Let $C_s$ be a state-based CRDT with $C_s = (S, s^0, q, u, m)$. Suppose that
-  $C_o$ is an op-based CRDT, which is defined as follows:
+  Let $C_s$ be a state-based \CRDT with $C_s = (S, s^0, q, u, m)$. Suppose that
+  $C_o$ is an op-based \CRDT, which is defined as follows:
   \[
     C_0 = \left\{ \begin{aligned}
       S_o &: S \\
@@ -131,23 +131,23 @@ replicas by merging the prepared state into $C_o$'s own state, preserving the
 equality.
 \end{proof}
 
-In other words, we decompose the \textit{update} function of a state-based CRDT
+In other words, we decompose the \textit{update} function of a state-based \CRDT
 into the \textit{prepare-update} and \textit{effect-update} functions of an
-op-based CRDT. Suppose that a set of parameters $p$ are used to invoke the
-update function $u$ of a state-based CRDT, i.e., that $u(p...)$ produces the
+op-based \CRDT. Suppose that a set of parameters $p$ are used to invoke the
+update function $u$ of a state-based \CRDT, i.e., that $u(p...)$ produces the
 desired updated state. Then the \textit{prepare-update} returns a serialized
 representation of $u(p...)$, which is to say that it returns the updated state.
 The \textit{effect-update} implementation then takes that representation and
 applies it by invoking the merge function $m$ with the effect representation and
 its own state to produce the new state.
 
-All of this is to say the first of two maxims: a state-based CRDT is an op-based
-CRDT where the operation is \emph{merge}.
+All of this is to say the first of two maxims: a state-based \CRDT is an op-based
+\CRDT where the operation is \emph{merge}.
 
-\section{$\delta$-state based CRDTs as state-based}
-Now that we have a procedure for representing a state-based CRDT as an
-equivalent op-based CRDT under the mapping $\varphi$, we only need to discover a
-similar such mapping from a $\delta$-state to state-based CRDT. Suppose that one
+\section{$\delta$-state based \CRDTs as state-based}
+Now that we have a procedure for representing a state-based \CRDT as an
+equivalent op-based \CRDT under the mapping $\varphi$, we only need to discover a
+similar such mapping from a $\delta$-state to state-based \CRDT. Suppose that one
 exists, and call it $\varphi_{\delta \to \text{state}}$. Then, we could compose
 the two and obtain:
 \[
@@ -157,36 +157,36 @@ the two and obtain:
 \]
 Luckily, the mapping $\varphi_{\delta \to \text{state}}$ (which we now refer to
 as $\varphi$ out of convenience, disambiguating where necessary) is identity.
-This brings us to the second of the two maxims: all $\delta$-state CRDTs are
-themselves state-CRDTs.
+This brings us to the second of the two maxims: all $\delta$-state \CRDTs are
+themselves state-\CRDTs.
 
-This is a crucial property of $\delta$-state CRDTs that we reason about now. Any
-$\delta$-state CRDT has a state-space which describes a lattice, just like
-state-based CRDTs. Likewise, they have query, update, and merge functions. The
-only difference between state- and $\delta$-state CRDTs is that the
+This is a crucial property of $\delta$-state \CRDTs that we reason about now. Any
+$\delta$-state \CRDT has a state-space which describes a lattice, just like
+state-based \CRDTs. Likewise, they have query, update, and merge functions. The
+only difference between state- and $\delta$-state \CRDTs is that the
 \emph{communicated} state is a \emph{fragment} of the overall state. Crucially,
 these fragments are themselves part of the lattice $S$, which makes them
 suitable for sending around and reasoning about as identically to state-based
-CRDTs.
+\CRDTs.
 
 Therefore, we have a straightforward procedure for reasoning about
-$\delta$-state CRDTs in terms of op-based CRDTs, which is the following:
+$\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
 \begin{enumerate}
-  \item Convert a $\delta$-state CRDT into a state-based CRDT by applying
+  \item Convert a $\delta$-state \CRDT into a state-based \CRDT by applying
     $\varphi_{\delta \to \text{state}}$.
-  \item Convert that state-based CRDT into an op-based CRDT by applying
+  \item Convert that state-based \CRDT into an op-based \CRDT by applying
     $\varphi_{\text{state} \to \text{op}}$.
-  \item Reason about the resulting op-based CRDT using the existing framework
+  \item Reason about the resulting op-based \CRDT using the existing framework
     and implementation.
 \end{enumerate}
 
 \section{Network Relaxations}
 In our work, it was clear that the provided network model was not flexible
 enough to support an interesting result that state- or $\delta$-state
-CRDTs achieve strong eventual consistency. Specifically, our concern was that
+\CRDTs achieve strong eventual consistency. Specifically, our concern was that
 the provided network model did not support non-unique message identifiers, i.e.,
 that messages in the network execution could not be duplicated. This is a key
-requirement of op-based CRDTs, where the operation contained in a message
+requirement of op-based \CRDTs, where the operation contained in a message
 delivery is \textit{non-idempotent}, and so at-most-once delivery is a
 requirement for the object to achieve strong eventual consistency.
 
@@ -212,7 +212,7 @@ $i \in \mathbb{I}$, we assume that $i \mapsto 0$.
 
 When the counter increments a value $i \in \mathbb{I}$ on $m$,
 $\mathsf{op}_i(m)$ yields the serialized operation instructing the recipient
-CRDT to increment the value of $i$ by one. This is shown in the definition of
+\CRDT to increment the value of $i$ by one. This is shown in the definition of
 $\mathsf{apply}$, where the new state is comprised of the old state, where each
 node identifier $j$ is incremented by $i$ (where $i$ is the number of increment
 operations that $j$ has received, and $0$ if it has not been called).
@@ -237,14 +237,14 @@ the op-based GCounter fails to achieve consistency:
     \item Other replicas receive more than one copy of the operation, mapping
       \textit{their} value of $i \mapsto v$ for $v \ge 1$.
   \end{enumerate}
-  This is a trivial example of the non-idempotency of op-based CRDT instances
+  This is a trivial example of the non-idempotency of op-based \CRDT instances
   requiring at-most-once delivery semantics of the network in which they are
   instantiated.
 \end{example}
 
-State-based CRDTs, however, do not require at-most-once semantics in order to
+State-based \CRDTs, however, do not require at-most-once semantics in order to
 achieve strong eventual consistency. This follows from the requirement that a
-state-based CRDT's $\sqcup$ (read: \textit{join} or \textit{meet}) operation be
+state-based \CRDT's $\sqcup$ (read: \textit{join} or \textit{meet}) operation be
 idempotent. To illustrate this remark, consider the above example, this time
 using instead the state-based variant of the GCounter, as described
 in~\citep{almedia18}.
@@ -299,7 +299,7 @@ in~\citep{almedia18}.
 
 The above example illustrates a general principle, which is the following:
 \begin{theorem} \label{thm:state-sec-dup}
-  State-based CRDTs exhibit strong eventual consistency when operating in a
+  State-based \CRDTs exhibit strong eventual consistency when operating in a
   network environment with non-unique messages.
 \end{theorem}
 \begin{proof}
@@ -317,7 +317,7 @@ The above example illustrates a general principle, which is the following:
 
 This result guides our approach as follows: to show a stronger result that uses
 Theorem~\ref{thm:state-sec-dup} (i.e., that state- and $\delta$-state based
-CRDTs achieve strong eventual consistency no matter how many times), the network
+\CRDTs achieve strong eventual consistency no matter how many times), the network
 model originally presented in~\citep{gomes17} should be extended to remove the
 assumption that message identifiers are unique.
 
@@ -352,7 +352,7 @@ $m_1$ and $m_2$ are the same, then in fact both $m_1$ and $m_2$ are the same,
 and nodes $i$ and $j$ are the same. Said otherwise, every message has an
 \emph{unique} identifier.
 
-As stated earlier, in order to instantiate our state- and $\delta$-state CRDTs
+As stated earlier, in order to instantiate our state- and $\delta$-state \CRDTs
 over a network environment in which the result of
 Theorem~\ref{thm:state-sec-dup} will be tested, we must allow for two messages
 to share the same message identifier. In other words, in order to reuse the

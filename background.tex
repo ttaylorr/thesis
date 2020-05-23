@@ -2,15 +2,15 @@
 \label{chap:background}
 
 This chapter outlines the preliminary information necessary to contextualize the
-remainder of this thesis for readers unfamiliar with existing CRDT research.
-Here we motivate conflict-free replicated datatypes (CRDTs), formalize state-
-and op-based variants of CRDTs, and present examples of common instantiations.
+remainder of this thesis for readers unfamiliar with existing \CRDT research.
+Here we motivate conflict-free replicated datatypes (\CRDTs), formalize state-
+and op-based variants of \CRDTs, and present examples of common instantiations.
 Finally, we conclude with a discussion of the different levels of consistency
-guarantees that each CRDT variant offers, and rationalize which levels of
+guarantees that each \CRDT variant offers, and rationalize which levels of
 consistency are appealing in certain situations.
 
 \section{Motivation}
-Conflict-free Replicated Datatypes (CRDTs) are a way to store several copies of
+Conflict-free Replicated Datatypes (\CRDTs) are a way to store several copies of
 a data-structure on multiple computers which form a distributed system. Each
 participant in the system can make modifications to the datatype without
 the need for explicit coordination with other participants. Their
@@ -20,19 +20,19 @@ multiple participants to query and modify their \emph{view} of the replicated
 datatype, without the traditional overhead and implementation burden that more
 stringent replication algorithms require.
 
-Here, we'll discuss four variants of CRDTs: state-based, op-based, pure
+Here, we'll discuss four variants of \CRDTs: state-based, op-based, pure
 op-based, and $\delta$-state based. Each of these variants achieve a consistent
 value by the use of different message types, and each likewise requires a
 different set of delivery semantics. In this chapter, we identify $\delta$-state
-CRDTs as achieving an appealing set of trade-offs among each of the four
+\CRDTs as achieving an appealing set of trade-offs among each of the four
 variants. We restate that they are able to achieve Strong Eventual Consistency
-(the best reasonably-achievable consistency guarantee for most CRDT
+(the best reasonably-achievable consistency guarantee for most \CRDT
 applications) while maintaining both:
 \begin{itemize}
-  \item A relatively small payload size, as is the benefit of op-based CRDTs,
+  \item A relatively small payload size, as is the benefit of op-based \CRDTs,
     and
   \item Relatively weak delivery semantics, as is the benefit of stat-based
-    CRDTs.
+    \CRDTs.
 \end{itemize}
 
 \section{Coordinated Replication}
@@ -142,25 +142,25 @@ values will be decided) that makes implementing these algorithms correctly so
 difficult in practice. In essence, coordinating the proposals individual
 participants submit is the central difficulty of these algorithms.
 
-Conflict-free Replicated Datatypes (CRDTs) are a natural answer to this
+Conflict-free Replicated Datatypes (\CRDTs) are a natural answer to this
 question. By allowing participants to temporarily diverge from the state of the
 overall computation (c.f., the second property of
-Definition~\ref{def:eventual-consistency}), CRDTs allow replicas to violate the
+Definition~\ref{def:eventual-consistency}), \CRDTs allow replicas to violate the
 safety property of Definition~\ref{def:consensus}. By giving up the immediacy
 and permanence that the safety properties of a traditional distributed consensus
-algorithm, CRDTs allow for a dramatically lower implementation burden in
+algorithm, \CRDTs allow for a dramatically lower implementation burden in
 practice, and are substantially easier to reason about.
 
-\section{state-based CRDTs}
+\section{state-based \CRDTs}
 \label{sec:state-based-crdts}
-We begin with a discussion of state-based CRDTs from their inception
-in~\citep{shapiro11}. A state-based CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
-individual replica of a state-based CRDT is at some state $s^i \in S$ for $i \ge
+We begin with a discussion of state-based \CRDTs from their inception
+in~\citep{shapiro11}. A state-based \CRDT is a 5-tuple $(S, s^0, q, u, m)$. An
+individual replica of a state-based \CRDT is at some state $s^i \in S$ for $i \ge
 0$, and is initially $s^0$. The value may be queried by any client or other
 replica by invoking $q$. It may be updated with $u$, which has a unique type per
-CRDT object. Finally, $m$ merges the state of some other remote replica.
+\CRDT object. Finally, $m$ merges the state of some other remote replica.
 
-Crucially, the states of a given state-based CRDT form a partially-ordered set
+Crucially, the states of a given state-based \CRDT form a partially-ordered set
 $\langle S, \sqsubseteq \rangle$. This poset is used to form a join
 semi-lattice, where any finite subset of elements has a natural least
 upper-bound. Consider two elements $s^m, s^n \in S$. The least upper-bound
@@ -175,8 +175,8 @@ In other words, a $s = s^m \sqcup s^n$ is a least upper-bound of $s^m$ and $s^n$
 if it is the smallest element that is at least as large as both $s^m$ and $s^n$.
 
 For now, we set aside the query operations $q$, and allow $q$'s implementation
-detail that is left to individual CRDTs, and is specific to their use-case. For
-e.g., it may be that a vector-counter CRDT's implementation of $q$ is
+detail that is left to individual \CRDTs, and is specific to their use-case. For
+e.g., it may be that a vector-counter \CRDT's implementation of $q$ is
 something like:
 \[
   q : S \mapsto \mathbb{N} = \sum_{i \in \mathcal{I}} s(i)
@@ -186,13 +186,13 @@ the set of replicas, and $s(i)$ returns the $i$th index of the state vector.
 
 We'll focus our attention for now on the implementation of $m$, which is the
 function responsible for merging the states of two independent replicas of a
-given state-based CRDT. Given a suitable set of states which forms a lattice, we
+given state-based \CRDT. Given a suitable set of states which forms a lattice, we
 assume that:
 \[
   m(s_1, s_2) = s_1 \sqcup s_2
 \]
 for some join semi-lattice with join operation $\sqcup$, and that whenever a
-CRDT replica $r_1$ at state $s_1$ receives an update from another replica
+\CRDT replica $r_1$ at state $s_1$ receives an update from another replica
 $r_2$ at state $s_2$, that $r_1$ attains a new state $s_1' = m(s_1, s_2)$.
 This process, in addition to each replica periodically broadcasting an update
 which contains its current state, is carried on continually, and $m$ is
@@ -253,7 +253,7 @@ state.
 
 Finally, associativity is an appealing property, too, although its applications
 are both less immediate and less often-used in this thesis. Suppose that several
-replicas of a state-based CRDT reside on a network with, say, high latency, or
+replicas of a state-based \CRDT reside on a network with, say, high latency, or
 it is otherwise undesirable to send more messages on the network than is
 necessary. Because associativity implies that the grouping of updates is
 arbitrary, a replica can maintain a \textit{set} of pending updates, and
@@ -263,27 +263,27 @@ as whenever the set reaches a certain size, and/or after a certain amount of
 time has passed since flushing the set of pending updates.} send that set to
 other replicas by first folding $\sqcup$ over it and sending a single update.
 
-\section{op-based CRDTs}
+\section{op-based \CRDTs}
 \label{sec:op-based-crdts}
 
-Operation-based (op-based) CRDTs, like their state-based counterparts have
+Operation-based (op-based) \CRDTs, like their state-based counterparts have
 internal states that form a semi-lattice. However, their communication styles
-differ fundamentally: op-based CRDTs communicate \textit{operations} that
+differ fundamentally: op-based \CRDTs communicate \textit{operations} that
 indicate a kind of update to be applied locally, instead of the \textit{result}
-of that update (as is the case in state-based CRDTs).
+of that update (as is the case in state-based \CRDTs).
 
-This section discusses the original op-based CRDTs and pays brief attention to
-some newer specifications such as \textit{pure op-based CRDTs}~\citep{shapiro11,
+This section discusses the original op-based \CRDTs and pays brief attention to
+some newer specifications such as \textit{pure op-based \CRDTs}~\citep{shapiro11,
 baquero17}.
 
-An op-based CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
+An op-based \CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
 Section~\ref{sec:state-based-crdts}, $S$, $s^0$, and $q$, retain their
 original meaning (that is, the state set, an initial state, a query function,
-and an update function). In op-based CRDTs, the pair $(t,u)$ takes the place of
-the $m$ merging function from state-based CRDTs. $t$ and $u$ correspond to
+and an update function). In op-based \CRDTs, the pair $(t,u)$ takes the place of
+the $m$ merging function from state-based \CRDTs. $t$ and $u$ correspond to
 \textit{prepare-update} and \textit{effect-update}, respectively. When an update
 is made by a caller (say, for example, incrementing the value of an op-based
-CRDT counter), it is done in two phases~\citep{shapiro11}:
+\CRDT counter), it is done in two phases~\citep{shapiro11}:
 \begin{enumerate}
   \item First, the \textit{prepare-update} implementation $t$ is applied at the
     replica receiving the update. $t$ is side-effect free, and prepares a
@@ -296,17 +296,17 @@ CRDT counter), it is done in two phases~\citep{shapiro11}:
 \end{enumerate}
 
 This is the critical distinction between op- and state-based CRDTS:
-state-based CRDTs propagate their state by applying a local update and taking
+state-based \CRDTs propagate their state by applying a local update and taking
 advantage of the lattice structure of their state-space in order to define a
-convenient merge function. On the other hand, op-based CRDTs propagate their
+convenient merge function. On the other hand, op-based \CRDTs propagate their
 state by sending the \textit{representation} of an update to other replicas as
 an instruction. This critical juncture translates into a corresponding
-relaxation in the operation $(t, u)$, which is that unlike the state-based CRDTs
-whose $m$ must be commutative, associative, and idempotent, and op-based CRDT
+relaxation in the operation $(t, u)$, which is that unlike the state-based \CRDTs
+whose $m$ must be commutative, associative, and idempotent, and op-based \CRDT
 implementation of $(t, u)$ need only be commutative.
 
 To explain why, we briefly restate the definition of a causal history for
-op-based CRDTs:
+op-based \CRDTs:
 
 \begin{definition}[op-based Causal History~\citep{shapiro11}]
 An object's casual history $C = \{ c_1, \ldots, c_n \}$ is defined as follows.
@@ -317,73 +317,73 @@ the execution at $k$ is non-idempotent (i.e., it is $u$), then $c_i^{k} =
 c_i^{k-1} \cup \{ u_i^k(\cdot) \}$.
 \end{definition}
 
-Causal history of an op-based CRDT is defined based on the
+Causal history of an op-based \CRDT is defined based on the
 \textit{happens-before} relation $\to$ as follows. An update $(t,u)$ happens
 before $(t',u')$ (i.e., that $(t, u) \to (t', u')$) iff $u \in c_{j}^{K_j(t')}$
 if $K_j$ is the injective mapping from operation to execution time. Shapiro and
 his co-authors go on to describe a sufficient definition for the commutativity
-of $(t,u)$ in op-based CRDTs. In effect, they say that two pairs $(t,u)$ and
+of $(t,u)$ in op-based \CRDTs. In effect, they say that two pairs $(t,u)$ and
 $(t',u')$ commute if and only if for any reachable state $s \in S$ the effect of
 applying them in either order is the same. That is, $s \circ u \circ u' \equiv s
 \circ u' \circ u$.
 
 They claim that having commutativity for concurrent operations as well as an
 in-order delivery relation $P$ for comparable updates is sufficient to prove
-that op-based CRDTs achieve Strong Eventual Consistency.
+that op-based \CRDTs achieve Strong Eventual Consistency.
 
-\subsection{Pure op-based CRDTs}
+\subsection{Pure op-based \CRDTs}
 
 For completeness, we briefly discuss the work of Baquero and his co-authors in
-developing \emph{pure} op-based CRDTs~\citep{baquero17}. Although we devote some
-time to their discussion, we do not investigate pure op-based CRDTs further in
-this thesis. Pure op-based CRDTs address a highly-interpretable definition of
+developing \emph{pure} op-based \CRDTs~\citep{baquero17}. Although we devote some
+time to their discussion, we do not investigate pure op-based \CRDTs further in
+this thesis. Pure op-based \CRDTs address a highly-interpretable definition of
 $t$ and $u$ to restrict the payload size of the messages that these operations
 generate and require, respectively. In particular, they point out that op-based
-CRDTs may behave as if they were state-based CRDTs when $t$ encodes the state
+\CRDTs may behave as if they were state-based \CRDTs when $t$ encodes the state
 $s^k$ and $u$ acts like a full join on the lattice $S$.
 
-A particular advantage of op-based CRDTs over their state-based counter-parts is
+A particular advantage of op-based \CRDTs over their state-based counter-parts is
 that they are generally believed to require less overall bandwidth to
-communicate updates. The key trade-off is that op-based CRDTs require a much
+communicate updates. The key trade-off is that op-based \CRDTs require a much
 stronger delivery semantics $P$ (in particular, $P$ must provide in-order and
 at-most-once delivery of messages) in order to attain Strong Eventual
-Consistency. Of course, treating an op-based CRDT as a state-based one
+Consistency. Of course, treating an op-based \CRDT as a state-based one
 eliminates many of these benefits.
 
 To address this issue, Baquero and his co-authors instead treat the state-space
-$S$ of a \emph{pure} op-based CRDT as a poset of
+$S$ of a \emph{pure} op-based \CRDT as a poset of
 operations\footnote{Incomparable items are generally interpreted as concurrent
-operations performed on a pure op-based CRDT}, where the state is interpreted as
+operations performed on a pure op-based \CRDT}, where the state is interpreted as
 applying elements in the poset order. They couple this with the additional
 restriction that $(t,u)$ can only send operations to other replicas, meaning
 that, for instance, they cannot send the entire state of a replica to all other
 replicas.
 
-\section{$\delta$-state CRDTs}
-In this section, we describe the refinement of CRDTs that is the interest and
-focus of the body of this thesis. That is the $\delta$-state CRDT, as described
+\section{$\delta$-state \CRDTs}
+In this section, we describe the refinement of \CRDTs that is the interest and
+focus of the body of this thesis. That is the $\delta$-state \CRDT, as described
 in~\citep{almedia18}. In their original work, Almeida and his co-authors
-describe $\delta$-state CRDTs as:
+describe $\delta$-state \CRDTs as:
 \begin{quote}
 ...ship[ping] a \textit{representation of the effect} of recent update operations
 on the state, rather than the whole state, while preserving the idempotent
 nature of \textit{join}
 \end{quote}
 
-We will present an example of the $\delta$-state CRDT in a below section. For
+We will present an example of the $\delta$-state \CRDT in a below section. For
 now, we focus on the background material necessary to contextualize
-$\delta$-state CRDTs. This refinement can be thought of as taking ideas from
-both state- and op-based CRDTs to mediate some of the trade-offs described
-above. Like a state-based CRDT, $\delta$-state based CRDTs have both internal
+$\delta$-state \CRDTs. This refinement can be thought of as taking ideas from
+both state- and op-based \CRDTs to mediate some of the trade-offs described
+above. Like a state-based \CRDT, $\delta$-state based \CRDTs have both internal
 states and message payloads that form a join semi-lattice. This endows the
-$\delta$-state CRDT with a commutative, associative, and idempotent \emph{join}
-operator, as before. Likewise, this means that the $\delta$-state CRDT supports
+$\delta$-state \CRDT with a commutative, associative, and idempotent \emph{join}
+operator, as before. Likewise, this means that the $\delta$-state \CRDT supports
 weak delivery semantics, such as delayed, dropped\footnote{In this thesis, we
 consider dropped messages as having been delayed for an infinite amount of time,
 allowing us to reason about a smaller set of delivery semantics.}, reordered,
 and duplicated message delivery.
 
-Unlike a state-based CRDT, however, $\delta$-state CRDTs do not send their
+Unlike a state-based \CRDT, however, $\delta$-state \CRDTs do not send their
 internal state $s^k$ after an update at time $k-1$. With sufficient
 conditions\footnote{Effectively, sufficient conditions mean an internal state
 whose updates can be represented as ``smaller'' items within the set of
@@ -391,30 +391,30 @@ reachable states. For example, to communicate the operation ``insert element $x$
 into a set'', send the singleton set $\{x\}$ instead of $S \cup \{ x \}$.}, this
 means that:
 \begin{itemize}
-  \item $\delta$-state CRDTs support the same weak requirements from the network
-    as ordinary state-based CRDTs. That is, they support dropping, duplicating,
+  \item $\delta$-state \CRDTs support the same weak requirements from the network
+    as ordinary state-based \CRDTs. That is, they support dropping, duplicating,
     reordering, and delaying of messages.
-  \item $\delta$-state CRDTs have similarly low-overhead of message size as
-    op-based CRDTs.
+  \item $\delta$-state \CRDTs have similarly low-overhead of message size as
+    op-based \CRDTs.
 \end{itemize}
-On the converse, $\delta$-state CRDTs do not:
+On the converse, $\delta$-state \CRDTs do not:
 \begin{itemize}
-  \item ...have potentially large payload size, as state-based CRDTs are prone
+  \item ...have potentially large payload size, as state-based \CRDTs are prone
     to have.
   \item ...require a strong delivery semantics $P$ that ensures ordered,
-    at-most-once delivery as op-based CRDTs do.
+    at-most-once delivery as op-based \CRDTs do.
 \end{itemize}
-Said otherwise, $\delta$-state CRDTs have the relative strengths of both state-
-and op-based CRDTs without their respective drawbacks. This makes them an area
+Said otherwise, $\delta$-state \CRDTs have the relative strengths of both state-
+and op-based \CRDTs without their respective drawbacks. This makes them an area
 of interest, and they are the subject to which we dedicate the remainder of this
 thesis.
 
-\section{Elementary CRDT instantiations}
-In this section, we provide the specification of three common CRDT instantiations
-for three of the four aforementioned CRDT refinements. In particular, we show
+\section{Elementary \CRDT instantiations}
+In this section, we provide the specification of three common \CRDT instantiations
+for three of the four aforementioned \CRDT refinements. In particular, we show
 instantiations of the Grow-Only Counter (G-Counter), Positive-Negative Counter
 (PN-Counter), and the Grow-Only Set (G-Set) for state-, op-, and
-$\delta$-state-based CRDTs. In each of the below, we assume that $\mathcal{I}$
+$\delta$-state-based \CRDTs. In each of the below, we assume that $\mathcal{I}$
 refers to the set of node identifiers corresponding to the active
 replicas\footnote{In this thesis, we consider $\mathcal{I}$ to be fixed during
 execution; that is, we do not support addition or deletion of replicas.}. For
@@ -435,7 +435,7 @@ now, we assume that this set is fixed.
       \mathsf{dom}(s_2) \right\}
     \end{aligned}\right.
   \]
-  \caption{state-based \textsf{G-Counter} CRDT}
+  \caption{state-based \textsf{G-Counter} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -449,7 +449,7 @@ now, we assume that this set is fixed.
       u &: \lambda s,p. s + 1 \\
     \end{aligned}\right.
   \]
-  \caption{op-based \textsf{G-Counter} CRDT}
+  \caption{op-based \textsf{G-Counter} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -464,7 +464,7 @@ now, we assume that this set is fixed.
       \mathsf{dom}(s_2) \right\}
     \end{aligned}\right.
   \]
-  \caption{$\delta$-state based \textsf{G-Counter} CRDT}
+  \caption{$\delta$-state based \textsf{G-Counter} \CRDT}
 \end{figure}
 
 \subsection{Example: PN-Counter}
@@ -487,7 +487,7 @@ now, we assume that this set is fixed.
            \end{aligned}
     \end{aligned}\right.
   \]
-  \caption{state-based \textsf{PN-Counter} CRDT}
+  \caption{state-based \textsf{PN-Counter} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -505,7 +505,7 @@ now, we assume that this set is fixed.
            \end{cases} \\
     \end{aligned}\right.
   \]
-  \caption{op-based \textsf{PN-Counter} CRDT}
+  \caption{op-based \textsf{PN-Counter} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -525,7 +525,7 @@ now, we assume that this set is fixed.
            \end{aligned}
     \end{aligned}\right.
   \]
-  \caption{$\delta$-state based \textsf{PN-Counter} CRDT}
+  \caption{$\delta$-state based \textsf{PN-Counter} \CRDT}
 \end{figure}
 
 
@@ -545,7 +545,7 @@ now, we assume that this set is fixed.
       m &: \lambda s_1, s_2. s_1 \cup s_2 \\
     \end{aligned}\right.
   \]
-  \caption{state-based \textsf{G-Set} CRDT}
+  \caption{state-based \textsf{G-Set} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -560,7 +560,7 @@ now, we assume that this set is fixed.
       m &: \lambda s_1, s_2. s_1 \cup s_2 \\
     \end{aligned}\right.
   \]
-  \caption{op-based \textsf{G-Set} CRDT}
+  \caption{op-based \textsf{G-Set} \CRDT}
 \end{figure}
 
 \begin{figure}[H]
@@ -574,17 +574,17 @@ now, we assume that this set is fixed.
       m &: \lambda s_1, s_2. s_1 \cup s_2 \\
     \end{aligned}\right.
   \]
-  \caption{$\delta$-state based \textsf{G-Set} CRDT}
+  \caption{$\delta$-state based \textsf{G-Set} \CRDT}
 \end{figure}
 
 \section{Consistency Guarantees}
 \subsection{Causal Consistency}
 Although commutativity and idempotency receive the greatest share of attention
-within CRDT research, associativity is most often used in the area of
-$\delta$-state CRDTs. We will discuss a couple of applications of the
+within \CRDT research, associativity is most often used in the area of
+$\delta$-state \CRDTs. We will discuss a couple of applications of the
 associative property of $\sqcup$ in detail in Chapter~\ref{chap:future-work},
 and overview them briefly now. The associativity of updates means that
-$\delta$-state CRDTs means that these objects can form an \emph{delta interval},
+$\delta$-state \CRDTs means that these objects can form an \emph{delta interval},
 say, $\Delta^a_b$, which comprises the updates on the interval of time $[a,b)$.
 When certain restrictions on when an interval $\Delta^a_b$ may be flushed based
 on the values of $a$, $b$, other properties may be attained such as causal
