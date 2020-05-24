@@ -4,6 +4,7 @@
 *.bbg
 *.bbl
 *.blg
+*.lof
 *.log
 *.pdf
 *.toc
