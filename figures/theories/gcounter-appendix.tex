@@ -1,0 +1,51 @@
+\begin{isabellebody}
+\isanewline
+\isacommand{context}\isamarkupfalse%
+\ gcounter\ \isakeyword{begin}\isanewline
+\isanewline
+\isacommand{sublocale}\isamarkupfalse%
+\ sec{\isacharcolon}\ strong{\isacharunderscore}eventual{\isacharunderscore}consistency\ weak{\isacharunderscore}hb\ hb\ interp{\isacharunderscore}msg\isanewline
+\ \ {\isachardoublequoteopen}{\isasymlambda}ops{\isachardot}\ {\isasymexists}xs\ i{\isachardot}\ xs\ prefix\ of\ i\ {\isasymand}\ node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs\ {\isacharequal}\ ops{\isachardoublequoteclose}\ {\isachardoublequoteopen}{\isasymlambda}\ x{\isachardot}\ None{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}standard{\isacharsemicolon}\ clarsimp{\isacharparenright}\isanewline
+\ \ \ \ \ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}auto\ simp\ add{\isacharcolon}\ hb{\isacharunderscore}consistent{\isacharunderscore}prefix\ drop{\isacharunderscore}last{\isacharunderscore}message\ node{\isacharunderscore}deliver{\isacharunderscore}messages{\isacharunderscore}distinct\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharparenright}\isanewline
+\ \ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}metis\ {\isacharparenleft}full{\isacharunderscore}types{\isacharparenright}\ interp{\isacharunderscore}msg{\isacharunderscore}def\ gcounter{\isacharunderscore}op{\isachardot}elims{\isacharparenright}\isanewline
+\ \ \isacommand{using}\isamarkupfalse%
+\ drop{\isacharunderscore}last{\isacharunderscore}message\ \isacommand{apply}\isamarkupfalse%
+\ blast\isanewline
+\ \ \isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isacommand{end}\isamarkupfalse%
+\isanewline
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}

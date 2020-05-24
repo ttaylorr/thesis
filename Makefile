@@ -22,6 +22,17 @@ THEORIES += src/GSet.thy
 
 THEORY = src/output/document.pdf
 
+FIGURES =
+FIGURES += figures/theories/delta-gcounter-appendix.tex
+FIGURES += figures/theories/delta-gcounter.tex
+FIGURES += figures/theories/delta-gset-appendix.tex
+FIGURES += figures/theories/delta-gset.tex
+FIGURES += figures/theories/gcounter-additional.tex
+FIGURES += figures/theories/gcounter-appendix.tex
+FIGURES += figures/theories/gcounter.tex
+FIGURES += figures/theories/gset-appendix.tex
+FIGURES += figures/theories/gset.tex
+
 $(ISABELLE_STY) :
 	$(ISABELLE) latex -o sty
 
@@ -31,7 +42,7 @@ else
 PREAMBLE=\newcommand{\forprint}{1}
 endif
 
-thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY) $(THEORY)
+thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 	bibtex $(patsubst %.tex,%,$<)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"

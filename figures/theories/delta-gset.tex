@@ -1,0 +1,18 @@
+\begin{isabellebody}
+\isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+\ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ set{\isachardoublequoteclose}\isanewline
+\isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+\ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ state{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}a\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}insert\ a\ as\ {\isacharequal}\ {\isacharbraceleft}\ a\ {\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ delta{\isacharunderscore}gset{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}delta{\isacharunderscore}gset{\isacharunderscore}op\ a\ as\ {\isacharequal}\ Some\ {\isacharparenleft}\ as\ {\isasymunion}\ a\ {\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{locale}\isamarkupfalse%
+\ delta{\isacharunderscore}gset\ {\isacharequal}\ network{\isacharunderscore}with{\isacharunderscore}ops\ {\isacharunderscore}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\end{isabellebody}%
+\endinput

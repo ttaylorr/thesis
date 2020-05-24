@@ -1,0 +1,121 @@
+\begin{isabellebody}%
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ {\isacharbrackleft}simp{\isacharbrackright}\ {\isacharcolon}\ {\isachardoublequoteopen}delta{\isacharunderscore}gset{\isacharunderscore}op\ x\ {\isasymrhd}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ y\ {\isacharequal}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ y\ {\isasymrhd}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ x{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+\ {\isacharparenleft}auto\ simp\ add{\isacharcolon}\ kleisli{\isacharunderscore}def{\isacharparenright}\isanewline
+\isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}xs\ prefix\ of\ i{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}hb{\isachardot}concurrent{\isacharunderscore}ops{\isacharunderscore}commute\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\isanewline
+\ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}clarsimp\ simp{\isacharcolon}\ hb{\isachardot}concurrent{\isacharunderscore}ops{\isacharunderscore}commute{\isacharunderscore}def{\isacharparenright}\isanewline
+\ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}unfold\ interp{\isacharunderscore}msg{\isacharunderscore}def{\isacharcomma}\ simp{\isacharparenright}\isanewline
+\isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{corollary}\isamarkupfalse%
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ set{\isacharunderscore}convergence{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}set\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs{\isacharparenright}\ {\isacharequal}\ set\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ ys{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}xs\ prefix\ of\ i{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}ys\ prefix\ of\ j{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{shows}\ {\isachardoublequoteopen}apply{\isacharunderscore}operations\ xs\ {\isacharequal}\ apply{\isacharunderscore}operations\ ys{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+{\isacharparenleft}auto\ simp\ add{\isacharcolon}\ apply{\isacharunderscore}operations{\isacharunderscore}def\ intro{\isacharcolon}\ hb{\isachardot}convergence{\isacharunderscore}ext\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ node{\isacharunderscore}deliver{\isacharunderscore}messages{\isacharunderscore}distinct\ hb{\isacharunderscore}consistent{\isacharunderscore}prefix{\isacharparenright}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{context}\isamarkupfalse%
+\ delta{\isacharunderscore}gset\ \isakeyword{begin}\isanewline
+\isanewline
+\isacommand{sublocale}\isamarkupfalse%
+\ sec{\isacharcolon}\ strong{\isacharunderscore}eventual{\isacharunderscore}consistency\ weak{\isacharunderscore}hb\ hb\ interp{\isacharunderscore}msg\isanewline
+\ \ {\isachardoublequoteopen}{\isasymlambda}ops{\isachardot}\ {\isasymexists}xs\ i{\isachardot}\ xs\ prefix\ of\ i\ {\isasymand}\ node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs\ {\isacharequal}\ ops{\isachardoublequoteclose}\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}standard{\isacharsemicolon}\ clarsimp{\isacharparenright}\isanewline
+\ \ \ \ \ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}auto\ simp\ add{\isacharcolon}\ hb{\isacharunderscore}consistent{\isacharunderscore}prefix\ drop{\isacharunderscore}last{\isacharunderscore}message\ node{\isacharunderscore}deliver{\isacharunderscore}messages{\isacharunderscore}distinct\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharparenright}\isanewline
+\ \ \ \isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}metis\ {\isacharparenleft}full{\isacharunderscore}types{\isacharparenright}\ interp{\isacharunderscore}msg{\isacharunderscore}def\ delta{\isacharunderscore}gset{\isacharunderscore}op{\isachardot}elims{\isacharparenright}\isanewline
+\ \ \isacommand{using}\isamarkupfalse%
+\ drop{\isacharunderscore}last{\isacharunderscore}message\ \isacommand{apply}\isamarkupfalse%
+\ blast\isanewline
+\ \ \isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isacommand{end}\isamarkupfalse%
+\isanewline
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}%
+\endinput
