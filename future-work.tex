@@ -1,0 +1,38 @@
+\chapter{Future Work}
+\label{chap:future-work}
+
+This chapter outlines potential future research directions based on interesting
+and under-explored areas in this work. Here, we will outline six directions in
+the area of verifying $\delta$-state \CRDTs, as well as some insight that might
+be gained by exploring each of these directions. It is our hope that future
+researchers in this area may choose to conduct further investigation into these
+areas.
+
+\section{Verifying additional $\delta$-state \CRDTs}
+In our work, we presented examples of two $\delta$-state \CRDTs: the $\delta$
+G-Counter, and the $\delta$ G-Set. An immediate future direction is to
+investigate and verify more instances of $\delta$-state CRDTs.
+
+One area of particular interest is in the \emph{composition} of multiple
+$\delta$-state CRDTs. We have begun investigating the instantiation of a $pair$
+locale, which takes as arguments two independent $\delta$-state \CRDTs, known as
+``left'' and ``right''. Our hope is that provided existing instantiations of
+both of the sub-\CRDTs, that a $pair$ locale given two already-verified \CRDTs
+could be used without additional proof burden to create another instance of the
+$network{\isacharunderscore}with{\isacharunderscore}ops$ locale. That is: can
+two already-verified $\delta$-state \CRDTs be used to compose a new
+$\delta$-state CRDT which is their product without additional proof burden?
+
+If this were possible, two new \CRDTs would be verified without effort: the
+PN-Counter and the 2P-Set.
+
+\begin{enumerate}
+  \item More \CRDTs, including comparable pair types.
+  \item Delta intervals, either by simulation (e.g., setting the operation to be
+    a list of operations), or more directly.
+  \item Anti-entropy algorithms.
+  \item Other proof techniques, i.e., by simulation to state-based \CRDTs in a
+    $\delta$-state-first system.
+  \item End-to-end verification.
+  \item Pure $\delta$-state \CRDTs.
+\end{enumerate}
