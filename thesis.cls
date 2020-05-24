@@ -7,7 +7,7 @@
   \LoadClass[12pt,openright,draft,letterpaper]{report}
 \fi
 
-\RequirePackage{classicthesis}
+\RequirePackage[dottedtoc=true]{classicthesis}
 \RequirePackage{amsfonts}
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
