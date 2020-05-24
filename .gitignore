@@ -16,3 +16,6 @@ isabelle.sty
 isabellesym.sty
 pdfsetup.sty
 railsetup.sty
+
+src/document
+src/output

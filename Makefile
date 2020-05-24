@@ -14,6 +14,14 @@ SECTIONS += title.tex
 ISABELLE ?= /Applications/Isabelle2019.app/Isabelle/bin/isabelle
 ISABELLE_STY = comment.sty isabelle.sty isabellesym.sty pdfsetup.sty railsetup.sty
 
+THEORIES =
+THEORIES += src/DeltaGCounter.thy
+THEORIES += src/DeltaGSet.thy
+THEORIES += src/GCounter.thy
+THEORIES += src/GSet.thy
+
+THEORY = src/output/document.pdf
+
 $(ISABELLE_STY) :
 	$(ISABELLE) latex -o sty
 
@@ -23,10 +31,13 @@ else
 PREAMBLE=\newcommand{\forprint}{1}
 endif
 
-thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
+thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY) $(THEORY)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 	bibtex $(patsubst %.tex,%,$<)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
+
+$(THEORY) : $(THEORIES)
+	$(ISABELLE) build -D src || true
 
 .PHONY : clean
 clean:

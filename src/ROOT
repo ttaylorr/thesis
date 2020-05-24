@@ -1,13 +1,16 @@
-session "CRDT" = "HOL" +
+session src = HOL +
   options [document = pdf, document_output = "output"]
   theories [document = false]
-    "~~/src/Tools/Adhoc_Overloading"
-    "~~/src/HOL/Library/Monad_Syntax"
-  theories
-    Network
-    RGA
+    Convergence
     Counter
-    ORSet
+    Execution
+    Network
+    Ordered_List
+    Util
+  theories
+    DeltaGCounter
+    DeltaGSet
+    GCounter
+    GSet
   document_files
     "root.tex"
-    "root.bib"
