@@ -4,7 +4,7 @@
 \ifdefined\forprint
   \LoadClass[12pt,twoside,openright,draft,letterpaper]{report}
 \else
-  \LoadClass[12pt,openright,draft,letterpaper]{report}
+  \LoadClass[12pt,openright,draft,a4paper]{report}
 \fi
 
 \RequirePackage[dottedtoc=true]{classicthesis}
