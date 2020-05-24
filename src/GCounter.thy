@@ -1,3 +1,4 @@
+
 theory
   GCounter
 imports
@@ -12,10 +13,10 @@ fun option_max :: "int option \<Rightarrow> int option \<Rightarrow> int option"
 "option_max x None = x" |
 "option_max None y = y"
 
-fun update :: "'id state => 'id => (int => int) => ('id operation)" where
+fun update :: "'id state \<Rightarrow> 'id \<Rightarrow> (int \<Rightarrow> int) \<Rightarrow> ('id operation)" where
   "update x i fn = (case (x i) of
-      None       => x(i := Some(fn 0))
-    | Some (x_i) => x(i := Some(fn x_i)))"
+      None       \<Rightarrow> x(i := Some(fn 0))
+    | Some (x_i) \<Rightarrow> x(i := Some(fn x_i)))"
 
 fun inc :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)"  where
 "inc who st = update st who (\<lambda>x. x + 1)"

@@ -13,11 +13,9 @@ fun option_max :: "int option \<Rightarrow> int option \<Rightarrow> int option"
 "option_max None y = y"
 
 fun update :: "'id \<Rightarrow> 'id state \<Rightarrow> (int \<Rightarrow> int) \<Rightarrow> ('id operation)" where
-  "update i x fn = (\<lambda>j.
-    if i = j
-    then Some(fn (case (x i) of None \<Rightarrow> 0 | Some(xi) \<Rightarrow> xi))
-    else None
-  )"
+  "update i x fn = (\<lambda>j. if i = j
+                        then Some(fn (case (x i) of None \<Rightarrow> 0 | Some(xi) \<Rightarrow> xi))
+                        else None)"
 
 fun inc :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)" where
 "inc who st = update who st (\<lambda>x. x + 1)"
