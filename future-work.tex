@@ -24,10 +24,16 @@ two already-verified $\delta$-state \CRDTs be used to compose a new
 $\delta$-state CRDT which is their product without additional proof burden?
 
 If this were possible, two new \CRDTs would be verified without effort: the
-PN-Counter and the 2P-Set.
+PN-Counter and the 2P-Set. These two \CRDTs are the most straightforward
+composition of other known \CRDTs. Namely, the PN-Counter supports both an
+\textsf{inc} and \textsf{dec} operation by maintaining \emph{two} counters (each
+of which is treated as a single G-Counter, so the overall state is still
+monotone and thus forms a join semi-lattice). If such a $pair$ locale exists, we
+believe it would be as straightforward as instantiating: \TODO
+
 
 \begin{enumerate}
-  \item More \CRDTs, including comparable pair types.
+  \item \sout{More \CRDTs, including comparable pair types.}
   \item Delta intervals, either by simulation (e.g., setting the operation to be
     a list of operations), or more directly.
   \item Anti-entropy algorithms.
