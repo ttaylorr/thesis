@@ -1,20 +1,26 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{thesis}
 
-\LoadClass[12pt,twoside,openright,draft]{report}
+\ifdefined\forprint
+  \LoadClass[12pt,twoside,openright,draft,letterpaper]{report}
+\else
+  \LoadClass[12pt,openright,draft,letterpaper]{report}
+\fi
 
+\RequirePackage{classicthesis}
 \RequirePackage{amsfonts}
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \RequirePackage{amsthm}
 \ifdefined\forprint
 \RequirePackage{geometry}
-\RequirePackage[hidelinks]{hyperref}
+\hypersetup{hidelinks}
 \fi
 \ifdefined\forweb
 \RequirePackage[margin=1.25in]{geometry}
-\RequirePackage[pdfborder={0 0
-0},colorlinks=true,citecolor=purple,linkcolor=violet]{hyperref}
+\hypersetup{%
+  pdfborder={0 0 0},colorlinks=true,citecolor=purple,linkcolor=violet
+}
 \fi
 \RequirePackage{isabelle}
 \RequirePackage[square,sort,comma,numbers]{natbib}
