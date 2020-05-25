@@ -43,8 +43,8 @@ between two threads.
 
 This thesis focuses on datatypes by which computation can be coordinated across
 multiple machines. In particular, we formalize a set of consistency guarantees
-(namely, Strong Eventual Consistency) over a class of replicated datatypes,
-$\delta$-Conflict-Free Replicated Datatypes (\CRDTs). We describe the
+(namely, Strong Eventual Consistency, hereafter \SEC) over a class of replicated
+datatypes, $\delta$-Conflict-Free Replicated Datatypes (\CRDTs). We describe the
 preliminaries necessary to contextualize the body of this work in the following
 section.
 
@@ -54,15 +54,14 @@ to be both easily distributed and require relatively low coordination overhead
 by allowing individual participants to diverge temporarily from the state of the
 overall computation\footnote{That is, the computation reflects a different
 value depending on which participant in the computation responds to the
-request}.
+request.}.
 
 These datatypes operate in such a way so as to both avoid conflict between
-concurrent updates, and to avoid locking and coordination overhead. These
-datatypes are referred to as conflict-free replicated datatypes, hereafter,
-\CRDTs~\citep{shapiro11}. \CRDTs are said to achieve \textit{strong eventual
-consistency} (\SEC) which is to say that they achieve a stronger form of
-\textit{eventual consistency} (\EC). We summarize the definitions of eventual-
-and strong-eventual consistency from~\cite{shapiro11}.
+concurrent updates, and to avoid locking and coordination
+overhead~\citep{shapiro11}. \CRDTs are said to achieve \SEC which is to say that
+they achieve a stronger form of \textit{eventual consistency} (\EC). We
+summarize the definitions of eventual- and strong-eventual consistency
+from~\cite{shapiro11}.
 
 \begin{definition}[Eventual Consistency]
   \label{def:eventual-consistency}
@@ -93,7 +92,7 @@ of messages\footnote{It is sufficient to consider the op-based \CRDT as sending
 representations of actions: increment some value, place an item in a set, and so
 on. On the other hand, it suffices to consider state-based \CRDTs as sending the
 representation of the effect of that action: ``my counter is now $x$'', ``my set
-includes these elements'', and so on. state-based \CRDTs are furthermore
+includes these elements'', and so on. State-based \CRDTs are furthermore
 equipped with a $\sqcup$ which is capable of merging two states together, and is
 discussed in detail in Section~\ref{sec:state-based-crdts}.}.
 
@@ -184,7 +183,7 @@ In other words, we rely on the work of~\citep{gomes17} in order to build a
 portfolio of $\delta$-state \CRDTs as in~\citep{almedia18} and show that even
 under weak network guarantees\footnote{We inherit dropping and reordering of
 messages from the original work of~\citep{gomes17}, but further weaken the
-network model by also allowing messages to be duplicated} these $\delta$-state
+network model by also allowing messages to be duplicated.} these $\delta$-state
 \CRDTs still achieve strong eventual consistency.
 
 Our verification efforts yielded a portfolio of different $\delta$-state \CRDTs
@@ -193,7 +192,7 @@ such as the positive-negative counter (PN-Counter), and the observed-remove set
 (OR-set)). Our key idea guiding these verification efforts is to treat op- and
 state-based \CRDTs similarly by modeling state-based \CRDTs as op-based where the
 operation is the join provided by the semi-lattice\footnote{This approach is
-described in detail in Section~\ref{sec:op-state-unify}}. We use this idea to
+described in detail in Section~\ref{sec:op-state-unify}.}. We use this idea to
 build state- and $\delta$-state \CRDTs on top of the library provided
 in~\citep{gomes17}, and show that the
 $strong{\isacharunderscore}eventual{\isacharunderscore}consistency$ locale can
