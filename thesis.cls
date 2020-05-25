@@ -52,6 +52,7 @@
 
 \newtheorem{definition}{Definition}[chapter]
 \newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{maxim}{Maxim}[chapter]
 \newtheorem{example}{Example}[chapter]
 
 \newcommand*{\TODO}[1][]{\text{\color{red} TODO {#1}}}
