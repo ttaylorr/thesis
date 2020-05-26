@@ -33,6 +33,9 @@ FIGURES += figures/theories/gcounter.tex
 FIGURES += figures/theories/gset-appendix.tex
 FIGURES += figures/theories/gset.tex
 
+FIGURES += figures/scalar-state.pdf
+FIGURES += figures/vector-state.pdf
+
 $(ISABELLE_STY) :
 	$(ISABELLE) latex -o sty
 
@@ -46,6 +49,9 @@ thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 	bibtex $(patsubst %.tex,%,$<)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
+
+figures/%.pdf : figures/%.tex
+	pdflatex -output-directory $(dir $@) $<
 
 $(THEORY) : $(THEORIES)
 	$(ISABELLE) build -D src || true

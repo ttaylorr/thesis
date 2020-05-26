@@ -473,6 +473,12 @@ updates using this state-space. Consider the following example:
   Suppose we have two replicas, $r_1$ and $r_2$, and consider the following
   sequence of events:
 
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=.5\textwidth]{figures/scalar-state.pdf}
+    \caption{An (invalid) state-based GCounter with scalar state.}
+  \end{figure}
+
   \begin{enumerate}
     \item Initially, $q(r_1) = q(r_2) = 0$. Suppose next that one update is
       issued at each replica concurrently. That is, at the same time, we run
@@ -497,6 +503,12 @@ operations performed \emph{at that replica}.} The state-based GCounter maintains
 a vector of natural numbers, where each element in the vector corresponds to the
 number of \textsf{inc} operations applied at that replica.\footnote{We assume
 that there exists some injective mapping $f : \mathcal{I} \to \mathbb{N}$.}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.6\textwidth]{figures/vector-state.pdf}
+  \caption{A (correct) state-based GCounter with vector state.}
+\end{figure}
 
 When an \textsf{inc} is invoked at the $i$th replica, it updates its own state
 to increment by one the vector element associated with the $i$th replica, here
