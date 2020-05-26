@@ -62,6 +62,7 @@
 
 \newcommand*{\CRDT}{\textsf{CRDT}\xspace}
 \newcommand*{\CRDTs}{\textsf{CRDTs}\xspace}
+\newcommand*{\CC}{\textsf{CC}\xspace}
 \newcommand*{\EC}{\textsf{EC}\xspace}
 \newcommand*{\SEC}{\textsf{SEC}\xspace}
 
