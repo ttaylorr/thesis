@@ -8,7 +8,7 @@ to ask why one might design from the latter perspective rather than the former.
 The answer is threefold:
 \begin{enumerate}
   \item \emph{Resiliency}. Designing a computational workload to be distributed
-    amongst participants tolerates the failure of any one (or more) of those
+    among participants tolerates the failure of any one (or more) of those
     participants.
   \item \emph{Scalability}. When designed from a distributed standpoint,
     ``scaling'' your workload to meet a higher demand is reduced to adding
@@ -16,10 +16,10 @@ The answer is threefold:
     computation.
   \item \emph{Locality}. By sharing a computation across many individual pieces
     of hardware, system designers are able to place hardware closer to the site
-    at which their requests originate. Say that contacting a server capable of
-    fulfilling a request bottlenecks the user. In this case, additional hardware
-    may be placed physically closer to that user in order to reduce the overall
-    latency in responding to a request.
+    at which their requests originate. Suppose that contacting a server capable
+    of fulfilling a request bottlenecks the user. In this case, additional
+    hardware may be placed physically closer to that user in order to reduce the
+    overall latency in responding to a request.
 \end{enumerate}
 
 So, it is clear that as our demand on such computations grow, that so too
@@ -27,16 +27,16 @@ must our need to design these systems in a way that first considers the concerns
 of resiliency, scalability, and locality.
 
 In order to design systems in this way, however, one must consider additionally
-the challenges imposed by not having access to shared memory amongst
+the challenges imposed by not having access to shared memory among
 participants in the computation. If a program runs in a single-threaded fashion
 on a single computer, there is no need to coordinate memory accesses, since only
 one part of the program may be reading or writing memory at a given time. If the
-program is written to be multi-threaded, then the threads must coordinate
-amongst themselves by using mutexes or communication channels to avoid
-\textit{race conditions}.
+program is written to be multithreaded, then the threads must coordinate
+among themselves by using mutexes or communication channels to avoid
+\textit{race conditions} and other concurrency errors.
 
 The same challenge exists when a system is distributed at the hardware and
-machine level, rather than amongst multiple threads running on a single piece of
+machine level, rather than among multiple threads running on a single piece of
 hardware. The challenge, however, is made more difficult by the fact that the
 communication overhead is far higher between separate pieces of hardware than
 between two threads.
@@ -52,9 +52,9 @@ section.
 Our discussion here focuses on a particular class of datatypes that are designed
 to be both easily distributed and require relatively low coordination overhead
 by allowing individual participants to diverge temporarily from the state of the
-overall computation\footnote{That is, the computation reflects a different
+overall computation.\footnote{That is, the computation reflects a different
 value depending on which participant in the computation responds to the
-request.}.
+request.}
 
 These datatypes operate in such a way so as to both avoid conflict between
 concurrent updates, and to avoid locking and coordination
@@ -86,15 +86,15 @@ from~\cite{shapiro11}.
 
 Broadly speaking, there are two classes of \CRDTs, which we refer to as the op-
 and state-based variants. We will provide formal definitions for each of the two
-classes in due time (particularly, we do so in Chapter~\ref{chap:background}),
-but for now it is sufficient to distinguish the two as sending different kinds
-of messages\footnote{It is sufficient to consider the op-based \CRDT as sending
+classes in due time (Chapter~\ref{chap:background}), but for now it is
+sufficient to distinguish the two as sending different kinds of
+messages.\footnote{It is sufficient to consider the op-based \CRDT as sending
 representations of actions: increment some value, place an item in a set, and so
 on. On the other hand, it suffices to consider state-based \CRDTs as sending the
 representation of the effect of that action: ``my counter is now $x$'', ``my set
 includes these elements'', and so on. State-based \CRDTs are furthermore
 equipped with a $\sqcup$ which is capable of merging two states together, and is
-discussed in detail in Section~\ref{sec:state-based-crdts}.}.
+discussed in detail in Section~\ref{sec:state-based-crdts}.}
 
 We present brief definitions of op- and state-based \CRDTs based
 on~\citep{baquero14}:
@@ -153,20 +153,26 @@ at-most-once~\citep{shapiro11}.
 
 Significant work in this area~\cite{almedia18, enes18, cabrita17, vanDerLinde16}
 has focused on mediating these two extremes. This line of research (particularly
-in~\citep{almedia18}) has identified $\delta$-\CRDTs---a variant of the
-state-based \CRDT which we discuss in Section~\ref{sec:state-based-crdts}---as an
-alternative which occupies a satisfying position between the two extremes.
-$\delta$-\CRDTs have, in general, small payload size (thus requiring a similar
-amount of bandwidth as messages sent and received from op-based \CRDTs), but
-tolerate the same network deficiencies as state-based \CRDTs. This combination of
-properties makes them an appealing alternative to traditional state- and
-op-based \CRDTs, and places interest in studying their convergence properties.
+in~\citep{almedia18}) has identified $\delta$-state \CRDTs---a variant of the
+state-based \CRDT which we discuss in Section~\ref{sec:state-based-crdts}---as
+an alternative which occupies a satisfying position between the two extremes.
+$\delta$-state \CRDTs behave as traditional state-based \CRDTs, with the
+exception that their updates consist of state \emph{fragments} instead of their
+entire state. These fragments (generated by $\delta$-mutators and called
+$\delta$-updates) are then applied locally at all other replicas to reassemble
+the full state. Because these fragments often do not need to comprise the full
+state, $\delta$-state \CRDTs have in general, small payload size (thus requiring
+a similar amount of bandwidth as messages sent and received from op-based
+\CRDTs), while still tolerating the same set of network deficiencies as
+state-based \CRDTs. This combination of properties makes them an appealing
+alternative to traditional state- and op-based \CRDTs, and places interest in
+studying their convergence properties.
 
 \section{Contributions}
 
 Our main contribution builds on the work in~\citep{gomes17} and introduces a set
 of formally verified proofs in Isabelle~\citep{wenzel02} that re-establish the
-main result of~\citep{almedia18}, which we re-state here:
+main result of~\citep{almedia18}, which we re-state below:
 
 \begin{theorem}[Almedia, Shoker, Baquero, '18]
   Consider a set of replicas of a $\delta$-\CRDT object, replica $i$ evolving
@@ -178,6 +184,10 @@ main result of~\citep{almedia18}, which we re-state here:
   (directly or as part of a delta-group) at least once with every other replica,
   all replica states become equal.
 \end{theorem}
+
+Here, $X_i^t$ refers to the state of replica $i$ at time $t$, and
+$m^\delta_{i,k}$ refers to the $\delta$-mutation applied at the $i$th replica
+$i$ at time $k$.
 
 In other words, we rely on the work of~\citep{gomes17} in order to build a
 portfolio of $\delta$-state \CRDTs as in~\citep{almedia18} and show that even
@@ -191,8 +201,8 @@ Our verification efforts yielded a portfolio of different $\delta$-state \CRDTs
 such as the positive-negative counter (PN-Counter), and the observed-remove set
 (OR-set)). Our key idea guiding these verification efforts is to treat op- and
 state-based \CRDTs similarly by modeling state-based \CRDTs as op-based where the
-operation is the join provided by the semi-lattice\footnote{This approach is
-described in detail in Section~\ref{sec:op-state-unify}.}. We use this idea to
+operation is the join provided by the semi-lattice.\footnote{This approach is
+described in detail in Section~\ref{sec:state-as-op}.} We use this idea to
 build state- and $\delta$-state \CRDTs on top of the library provided
 in~\citep{gomes17}, and show that the
 $strong{\isacharunderscore}eventual{\isacharunderscore}consistency$ locale can
