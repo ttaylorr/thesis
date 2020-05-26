@@ -28,17 +28,185 @@ PN-Counter and the 2P-Set. These two \CRDTs are the most straightforward
 composition of other known \CRDTs. Namely, the PN-Counter supports both an
 \textsf{inc} and \textsf{dec} operation by maintaining \emph{two} counters (each
 of which is treated as a single G-Counter, so the overall state is still
-monotone and thus forms a join semi-lattice). If such a $pair$ locale exists, we
-believe it would be as straightforward as instantiating: \TODO
+monotone and thus forms a join semi-lattice).
 
+The PN-Counter has two $\delta$-state based G-Counter, which we refer to as
+$(\fst s)$ and $(\snd s)$, where $s \in S$ refers to the state of the
+PN-Counter. One possible specification for a $\delta$-based PN-Counter follows:
 
+\begin{figure}[H]
+  \[
+    \textsf{PN-Counter}_\delta = \left\{\begin{aligned}
+      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
+      s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
+      q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
+        \mathcal{I}} (\snd~s)(i) \\
+      u^\delta &: \lambda s,(i,op). \begin{cases}
+             \{ i \mapsto 1 \} \times \emptyset & \text{if $op=+$} \\
+             \emptyset \times \{ i \mapsto 1 \} & \text{if $op=-$} \\
+           \end{cases} \\
+      m^\delta &: \lambda s_1, s_2.\, \begin{aligned}
+             &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\fst~s_1) \cup (\fst~s_1)) \right\} \\
+             \times &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\snd~s_1) \cup (\snd~s_1)) \right\}
+           \end{aligned}
+    \end{aligned}\right.
+  \]
+  \caption{$\delta$-state based \textsf{PN-Counter} \CRDT}
+\end{figure}
+
+Minor additional consideration is given to the updating function,
+$u^\delta$, which returns an empty-set on the counter \emph{not} being updated.
+Finally, the merging function $m^\delta$ merges the left- and right-hand sides
+of the counter separately, and returns a pair. The 2P-Set is similar in function
+to the above, substituting a $\delta$-state based G-Set in place of the
+G-Counter.
+
+If such a $\isa{pair}$ locale exists, we believe it would be as straightforward
+as instantiating this locale over two copies of the G-Counter and G-Set to
+obtain the PN-Counter and 2P-Set immediately.
+
+\section{Direct $\delta$-state \CRDT proofs}
+
+To explore this idea, we drew significant inspiration from the work of Almedia
+and his co-authors in~\citep{almedia18} to restate $\delta$-state \CRDTs in
+terms of op-based \CRDTs in an effort to reuse as much of their library as
+possible.
+
+A significant drawback of this approach is that we are bound to the same
+restrictions as op-based \CRDTs, which are inherently more restricted than
+state-based \CRDTs. Much of this restriction comes from the \emph{eventual
+delivery} property of \EC, which states that~\citep{shapiro11}:
+\[
+  \forall i, j.\, f \in c_i \Rightarrow \lozenge f \in c_j
+\]
+or that for any pair of correct replicas $i$, $j$ with histories $c_i$ and
+$c_j$, respectively, an update received at one of those replicas is eventually
+received at all other replicas.
+
+Of course, under weak delivery semantics (i.e., in the case that the network may
+delay messages for an infinite amount of time), op-based \CRDTs do not achieve
+this property~\citep{shapiro11}. Namely, if an operation is performed at some
+replica, and that message is dropped while in transit to another replica, that
+replica will never receive the message.
+
+State-based \CRDTs do not suffer from this problem, since \emph{every} update
+they send encapsulates the history of all previous updates, since each update is
+either reflected in the state, or subsumed by some later update which is itself
+reflected in the state~\citep{shapiro11}. Since the entirety of the state is
+shared with each replica during an update, state-based \CRDTs do not need to
+impose an additional delivery relation in order to prove that they achieve \SEC.
+
+op-based \CRDTs, on the other hand, \emph{do} need to specify an additional
+delivery relation on top of their definition. That is, the delivery relation $P$
+is a \emph{predicate} over network behaviors in which the eventual delivery
+property can hold. In other words, for op-based \CRDTs:
+\[
+  P \Rightarrow \forall i, j.\, f \in c_i \Rightarrow \lozenge f \in c_j
+\]
+where it is a standard assumption that $P$ preserves (1) message order up to
+concurrent messages and (2) at least once delivery~\citep{shapiro11,
+almedia18}.\footnote{In practice, vector timestamps or globally unique
+identifiers are associated with each message at the network layer, and messages
+are reordered upon delivery to ensure that messages are delivered in the correct
+order. Since all messages are eventually delivered under the precondition $P$,
+this is a standard assumption.}
+
+However, specifying $\delta$-based \CRDTs as a refinement of state-based \CRDTs
+directly would not be sufficient for a constructive proof that $\delta$-state
+based \CRDTs achieve \SEC. This is due to the fact that $\delta$-state \CRDTs
+send state \emph{fragments}, which makes them the state-based analogue of
+op-based \CRDTs. Without an additional delivery relation, $\delta$-state \CRDT
+replicas which do not receive some update will never catch up without additional
+updates.
+
+Consider the figure below. In this example, we have three $\delta$-state \CRDT
+replicas of a $\delta$-based GCounter, and an \textsf{inc} is performed at
+$r_1$. Immediately, $r_1$ generates the state fragment $\{ r_1 \mapsto 1 \}$,
+and sends it to the other replicas, $r_2$ and $r_3$. For the sake of example,
+say that the network drops the update in route to $r_3$ such that it is never
+received by $r_3$:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.6\textwidth]{figures/sec-delta.pdf}
+  \caption{$\delta$-state \CRDTs violating \SEC without the causal merging
+    condition.}
+  \label{fig:delta-sec-violation}
+\end{figure}
+
+Without any future updates, neither of the replicas that \emph{have} received
+the update will ever have reason to update $r_3$ again. This is a demonstration
+of a \SEC violation, since:
+\[
+  \{ r_1 \mapsto 1 \} \in r_i \nRightarrow \lozenge \{ r_1 \mapsto 1 \} \in r_3,
+  \quad i \in \{ 1, 2 \}
+\]
+That is, though the update $\{ r_1 \mapsto 1 \}$ is in the node histories of
+$r_1$ and $r_2$ (both of which are behaving correctly), that update is
+\emph{never} in the history of node $r_3$, which is also behaving correctly.
+
+A critical issue in the above example is that $r_2$ merges the update from $r_1$
+immediately--thus placing the update in that node's history--without knowing
+whether or not it has been received by $r_3$. An anti-entropy algorithm like
+in~\citep{almedia18} addresses these problems. The goal of an anti-entropy
+algorithm for $\delta$-state \CRDTs is to do the following:
 \begin{enumerate}
-  \item \sout{More \CRDTs, including comparable pair types.}
-  \item Delta intervals, either by simulation (e.g., setting the operation to be
-    a list of operations), or more directly.
-  \item Anti-entropy algorithms.
-  \item Other proof techniques, i.e., by simulation to state-based \CRDTs in a
-    $\delta$-state-first system.
-  \item End-to-end verification.
-  \item Pure $\delta$-state \CRDTs.
+  \item On an operation, generate the $\delta$-mutation, and apply it to both
+    the local state, and a temporary \emph{$\delta$-group}.
+  \item Periodically, randomly choose between the current state and current
+    $\delta$-group, and send its entire contents to all other replicas, and
+    flush the $\delta$-group.
 \end{enumerate}
+This ensures that--even without outside interaction--the system as in
+Figure~\ref{fig:delta-sec-violation} will eventually recover, since either one
+of $r_1$ or $r_2$ will, at some point, send their full state to all other
+replicas, including $r_3$, at which point $r_3$ will have caught up.
+
+We believe that it would be a worthwhile research goal to encode this
+anti-entropy algorithm into a proof assistant, and specify that $\delta$-state
+\CRDTs achieve \SEC \emph{without} a correspondence to traditional op-based
+\CRDTs. Similarly to our work, in which we found a correspondence between
+$\delta$- and op-based \CRDTs, we believe that specifying $\delta$-state \CRDTs
+on their own would highlight the ways in which $\delta$-state \CRDTs are
+\emph{different} from op-based \CRDTs.
+
+Likewise, specifying the goal in this fashion would allow the proof to reason
+about more network behaviors without a delivery predicate $P$, since the proof
+would be aided by the periodic behavior of the anti-entropy algorithm above.
+
+\section{Causally Consistent $\delta$-\CRDTs}
+
+Another difference between op- and state-based \CRDTs is that state-based \CRDTs
+require a \emph{causal merging condition} in order to ensure causal consistency
+(that is, that updates are applied in a fashion that preserves their causality),
+whereas in op-based \CRDTs this is traditionally an assumption placed on
+$P$~\citep{shapiro11}.
+
+The authors of~\citep{almedia18} define a \emph{$\delta$-interval}
+$\Delta^{a,b}_i$ as:
+\[
+  \Delta^{a,b}_i = \bigsqcup \left\{ d_i^k : k \in [a, b) \right\}
+\]
+that is, $\Delta^{a,b}_i$ contains the deltas that occurred at replica $i$
+beginning at time $a$ and up until time $b$. They go on to use this
+$\delta$-interval to define the \emph{causal merging condition}, which is that
+replica $i$ only joins a $\delta$-interval $\Delta^{a,b}_j$ into its own state
+$X_i$ if:
+\[
+  X_i \sqsupseteq X_j^a
+\]
+That is, updates are only applied locally if they occurred \emph{before} the
+latest-known update at replica $i$.
+
+Algorithms which uphold the causal merging condition on $\delta$-intervals have
+been proven on paper to satisfy Causal Consistency (\CC) in addition to \SEC. To
+our knowledge, this result has not been mechanized, and so we believe it would
+be a worthwhile direction of future research to specify the causal merging
+condition and associated anti-entropy algorithms which preserve it into an
+interactive theorem prover and mechanize the results of~\citep{almedia18}.
+
+If the above is the subject of further exploration, we believe that it would be
+additionally possible to prove that $\delta$-state \CRDTs achieve \SEC by a
+\emph{simulation proof} that establishes their correspondence with state-based
+\CRDTs. This is mentioned as Proposition 3 in~\citep{almedia18}, but we believe
+that this is another fruitful area for formal verification.
