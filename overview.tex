@@ -2,16 +2,40 @@
 \label{chap:overview}
 
 This chapter outlines the specific research goals we have in verifying Strong
-Eventual Consistency in $\delta$-state \CRDTs. We will describe our efforts
-building on top of the op-based \CRDT verification framework from Gomes et.
-al~\citep{gomes17}. In addition, we'll discuss the unique way in which we view
-op-, state-, and $\delta$-state \CRDTs in order to minimize the number of
-modifications we were required to make in order to write proofs for
-$\delta$-state \CRDTs on top of a framework originally designed for op-based
-\CRDTs. Finally, we will motivate a series of changes that we made to the
-existing network delivery semantics to strengthen our overall result.
+Eventual Consistency in $\delta$-state \CRDTs. Specifically, we will discuss the
+following:
+\begin{itemize}
+  \item In Section~\ref{sec:state-as-op}, we will describe a mapping $\phi$ to
+    view state-based \CRDTs in terms of their op-based counterparts.
+  \item In Section~\ref{sec:delta-as-state}, we will note a key similarity
+    between state- and $\delta$-state based \CRDTs. This intuition will allow us
+    to use $\phi$ to reason about $\delta$-state \CRDTs in terms of op-based
+    \CRDTs.
+  \item Finally, in Section~\ref{sec:network-relaxations} we will motivate an
+    area in which the underlying delivery semantics needed strengthening, and
+    describe the manner in which we updated the relevant proofs.
+\end{itemize}
 
-\section{op-based \CRDTs as state-based}
+In this section, we will identify and discuss the two key intuitions which guide
+the remainder of our proof strategy. We'll refer to these intuitions as
+``maxims''. They are stated here in brief, but we will return to them in
+Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-state}.
+
+\begin{maxim}
+  \label{maxim:state-as-op}
+  A state-based \CRDT is an op-based \CRDT where the \emph{prepare-update} phase
+  returns the updated state, and the \emph{effect-update} is a join of two
+  states.
+\end{maxim}
+
+\begin{maxim}
+  \label{maxim:delta-as-state}
+  A $\delta$-state based \CRDT is a state-based \CRDT which is allowed to send
+  messages which do not reflect the entirety of its current state.
+\end{maxim}
+
+\section{state-based \CRDTs as op-based}
+\label{sec:state-as-op}
 Our discussion begins by addressing the question of how we will use a library
 built to verify op-based \CRDTs to verify $\delta$-state \CRDTs. Our approach is
 to view the set of $\delta$-state \CRDTs as a refinement of the set of
@@ -24,39 +48,38 @@ and state-based \CRDTs to one another.
 Consider some state-based \CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
 set of states $S$, an initial state $s^0$, along with functions for querying the
 state ($q$), updating its state ($u$), and merging its state with the state of
-some other object $(m)$. Our question is to define a mapping $\varphi$ as
+some other object $(m)$. Our question is to define a mapping $\phi$ as
 follows:
 \[
-  \varphi_{\text{state} \to \text{op}} :
+  \phi_{\text{state} \to \text{op}} :
     \underbrace{(S, s^0, q, u, m)}_{\text{state-based \CRDTs}} \longrightarrow
     \underbrace{(S, s^0, q, t, u)}_{\text{op-based \CRDTs}}
 \]
-For our purposes, we view $\varphi_{\text{state} \to \text{op}}$ as a homomorphism
+For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
 between state- and op-based \CRDTs. If we had such a structure-preserving
 transformation, then we would be able to verify any state-based \CRDT of our
 choosing using the framework from Gomes et. al. Without modification to the
-framework. Suppose that such a homomorphism exists. Then, the process for
-verifying a state-based \CRDT using the op-based framework might look something
-like as follows:
+framework. Then, the process for verifying a state-based \CRDT using the
+op-based framework looks as follows:
 \begin{enumerate}
   \item Take a state-based \CRDT, say $C_s$, of interest for verification.
   \item Convert the state-based \CRDT into an op-based one by computing:
     \[
-      C_o = \varphi_{\text{state} \to \text{op}}(C_s)
+      C_o = \phi_{\text{state} \to \text{op}}(C_s)
     \]
   \item Use $C_o$ as input to the verification tool.
 \end{enumerate}
 
-We'll now turn to describing the details of $\varphi{\text{state} \to \text{op}}$,
+We'll now turn to describing the details of $\phi{\text{state} \to \text{op}}$,
 which for convenience in this section, we'll abbreviate as simply
-$\varphi$.\footnote{In the following section, we'll define a new homomorphism
+$\phi$.\footnote{In the following section, we'll define a new homomorphism
 between state- and $\delta$-state based \CRDTs, at which point we will
 distinguish between the two mappings when it is unclear which is being referred
-to.} To understand $\varphi$, we'll consider how it maps the state $S$ (along with
+to.} To understand $\phi$, we'll consider how it maps the state $S$ (along with
 $s^0$ and $q$) separately from how it maps the update procedure $u$.
 
-\subsection{Mapping states under $\varphi$}
-Let us begin our discussion with a consideration to how $\varphi$ maps the state
+\subsection{Mapping states under $\phi$}
+Let us begin our discussion with a consideration to how $\phi$ maps the state
 $S$ from a state-based \CRDT to an op-based one. In practice, it would be
 unrealistic to treat the state space of a state-based \CRDT as equal to that of
 its op-based counter-part. Doing so would discard one of the key benefits of
@@ -71,10 +94,10 @@ function is often represented as:
 \]
 where $S = \mathbb{N}^{|\mathcal{I}|}_+$, and $s_0$ is the all-zeros vector.
 This representation accommodates a relatively weak set of delivery semantics
-including dropping, reordering, and duplication of messages\footnote{This
+including dropping, reordering, and duplication of messages.\footnote{This
 representation is also resilient to reordering of messages (though this
 restriction causes causal inconsistencies with respect to the state), but this
-is uninteresting for the example at hand.}. Because the counted values are
+is uninteresting for the example at hand.} Because the counted values are
 non-decreasing (that is, $S$ is a lattice), we have that:
 \begin{itemize}
   \item Dropped updates are eventually propagated through nodes that \emph{do}
@@ -87,29 +110,32 @@ non-decreasing (that is, $S$ is a lattice), we have that:
     commutative.
   \item Duplicated messages are resolved idempotently.
 \end{itemize}
-The size of this representation scales like $\mathcal{O}(|\mathcal{I}|)$, since
-vector has the same number of entries as there are participants in the system.
-We treat this linear scaling as a ``large'' state representation. Compare this
-to an op-based representation of the same object (i.e., $\textsf{G-Counter}_o$),
-which can represent its state using only $S = \mathbb{N}_+$, since updates are
-guaranteed to be delivered at most once (duplicating messages would cause states
-to appear which do not correspond to the number of times an update was performed
-in actuality, because the duplicate delivery would be indistinguishable from the
+Since the vector has an entry for each participant in the system, it grows
+as a linear function of the number of participants overall. Scaling linearly in
+this fashion is indicative of a ``large'' state representation.\footnote{Partly
+because \CRDTs are often composed with one another, e.g., as in the PN-Counter,
+and so this linear factor contributes to \emph{each} of the composed \CRDTs,
+increasing the size of the overall \CRDT even more.} Compare this to an op-based
+representation of the same object (i.e., $\textsf{G-Counter}_o$), which can
+represent its state using only $S = \mathbb{N}_+$, since updates are guaranteed
+to be delivered at most once (duplicating messages would cause states to appear
+which do not correspond to the number of times an update was performed in
+actuality, because the duplicate delivery would be indistinguishable from the
 case where two updates were performed).
 
-So, for remainder of this chapter, we treat $\varphi$ as preserving the state
+So, for remainder of this chapter, we treat $\phi$ as preserving the state
 space, and initial state under mapping. Since the query function $q$ is defined
-in terms of the state-space, $S$, we let $\varphi$ preserve the implementation of
+in terms of the state-space, $S$, we let $\phi$ preserve the implementation of
 $q$ under the mapping, too.
 
-\subsection{Mapping updates under $\varphi$}
-Now that we have mapped $S$, $s^0$, and $q$ under $\varphi$, we still need to
+\subsection{Mapping updates under $\phi$}
+Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
 address the implementation of $u$ and $m$ under mapping. Our guiding principle
 is the following theorem (which we state and discuss here, but have not
 mechanized):
 \begin{theorem}
-  Let $C_s$ be a state-based \CRDT with $C_s = (S, s^0, q, u, m)$. Suppose that
-  $C_o$ is an op-based \CRDT, which is defined as follows:
+  Let $C_s$ be a state-based \CRDT with $C_s = (S, s^0, q, u, m)$. Define an
+  op-based \CRDT $C_o$ as follows:
   \[
     C_0 = \left\{ \begin{aligned}
       S_o &: S \\
@@ -133,32 +159,46 @@ equality.
 
 In other words, we decompose the \textit{update} function of a state-based \CRDT
 into the \textit{prepare-update} and \textit{effect-update} functions of an
-op-based \CRDT. Suppose that a set of parameters $p$ are used to invoke the
-update function $u$ of a state-based \CRDT, i.e., that $u(p...)$ produces the
-desired updated state. Then the \textit{prepare-update} returns a serialized
+op-based \CRDT. Let $p$ be the set of parameters used to invoke the update
+function $u$ of a state-based \CRDT, i.e., that $u(p...)$ produces the desired
+updated state. Then the \textit{prepare-update} returns a serialized
 representation of $u(p...)$, which is to say that it returns the updated state.
 The \textit{effect-update} implementation then takes that representation and
 applies it by invoking the merge function $m$ with the effect representation and
 its own state to produce the new state.
 
-All of this is to say the first of two maxims: a state-based \CRDT is an op-based
-\CRDT where the operation is \emph{merge}.
+This introduces Maxim~\ref{maxim:state-as-op}, which unifies state- and op-based
+\CRDTs as behaving identically when the op-based \CRDT performs a join of two
+states. We restate this Maxim for clarity:
+
+\setcounter{maxim}{0}
+\begin{maxim}
+  A state-based \CRDT is an op-based \CRDT where the \emph{prepare-update} phase
+  returns the updated state, and the \emph{effect-update} is a join of two
+  states.
+\end{maxim}
 
 \section{$\delta$-state based \CRDTs as state-based}
+\label{sec:delta-as-state}
 Now that we have a procedure for representing a state-based \CRDT as an
-equivalent op-based \CRDT under the mapping $\varphi$, we only need to discover a
-similar such mapping from a $\delta$-state to state-based \CRDT. Suppose that one
-exists, and call it $\varphi_{\delta \to \text{state}}$. Then, we could compose
-the two and obtain:
+equivalent op-based \CRDT under the mapping $\phi$, we only need to discover a
+similar such mapping from a $\delta$-state to state-based \CRDT.  Then,
+composing the two allows us to obtain:
 \[
-  \varphi_{\delta \to \text{op}} =
-    \varphi_{\text{state} \to \text{op}} \circ
-    \varphi_{\delta \to \text{state}}
+  \phi_{\delta \to \text{op}} =
+    \phi_{\text{state} \to \text{op}} \circ
+    \phi_{\delta \to \text{state}}
 \]
-Luckily, the mapping $\varphi_{\delta \to \text{state}}$ (which we now refer to
-as $\varphi$ out of convenience, disambiguating where necessary) is identity.
-This brings us to the second of the two maxims: all $\delta$-state \CRDTs are
-themselves state-\CRDTs.
+Luckily, the mapping $\phi_{\delta \to \text{state}}$ (which we now refer to
+as $\phi$ out of convenience, disambiguating where necessary) is identity.
+This brings us to Maxim~\ref{maxim:delta-as-state}, which we restate here for
+clarity:
+
+\setcounter{maxim}{1}
+\begin{maxim}
+  A $\delta$-state based \CRDT is a state-based \CRDT which is allowed to send
+  messages which do not reflect the entirety of its current state.
+\end{maxim}
 
 This is a crucial property of $\delta$-state \CRDTs that we reason about now. Any
 $\delta$-state \CRDT has a state-space which describes a lattice, just like
@@ -173,14 +213,15 @@ Therefore, we have a straightforward procedure for reasoning about
 $\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
 \begin{enumerate}
   \item Convert a $\delta$-state \CRDT into a state-based \CRDT by applying
-    $\varphi_{\delta \to \text{state}}$.
+    $\phi_{\delta \to \text{state}}$.
   \item Convert that state-based \CRDT into an op-based \CRDT by applying
-    $\varphi_{\text{state} \to \text{op}}$.
+    $\phi_{\text{state} \to \text{op}}$.
   \item Reason about the resulting op-based \CRDT using the existing framework
     and implementation.
 \end{enumerate}
 
 \section{Network Relaxations}
+\label{sec:network-relaxations}
 In our work, it was clear that the provided network model was not flexible
 enough to support an interesting result that state- or $\delta$-state
 \CRDTs achieve strong eventual consistency. Specifically, our concern was that
