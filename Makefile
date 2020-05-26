@@ -37,6 +37,8 @@ FIGURES += figures/scalar-state.pdf
 FIGURES += figures/vector-delta.pdf
 FIGURES += figures/vector-state.pdf
 
+FIGURES += figures/sec-delta.pdf
+
 $(ISABELLE_STY) :
 	$(ISABELLE) latex -o sty
 
