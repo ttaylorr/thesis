@@ -13,15 +13,15 @@ relatively strong network guarantees (exactly-once, in-order delivery), and
 state-based \CRDTs suffer the opposite problem. Both satisfy \textit{strong,
 eventual consistency} (\SEC)
 
-We posit that $\delta$-\CRDTs both (1) require minimal communication overhead
-from payload size, and (2) tolerate relatively weak network environments, making
-them an ideal candidate for real-world use of \CRDTs. Our central intuition is
-to note a key similarity between state- and op-based \CRDTs. Namely, that
-state-based \CRDTs are equivalent to op-based \CRDTs when the operation is a
-join of the state. We extend the previous line of work in \cite{gomes17} by
-formalizing this intuition in Isabelle and extending the mechanized proofs
-presented there to show that state-based \CRDTs achieve \SEC. We then weaken the
-network model in \cite{gomes17} and show that state-based \CRDTs still maintain
-\SEC. Finally, we extend our work to gossip members of the \textit{sub-lattice},
-thus showing that $\delta$-\CRDTs achieve \SEC also, even under relatively weak
-network guarantees.
+We posit that $\delta$-\CRDTs~\citep{almedia18} both (1) require minimal
+communication overhead from payload size, and (2) tolerate relatively weak
+network environments, making them an ideal candidate for real-world use of
+\CRDTs. Our central intuition is to note a key similarity between state- and
+op-based \CRDTs. Namely, that state-based \CRDTs are equivalent to op-based
+\CRDTs when the operation is a join of the state. We extend the previous line of
+work in \cite{gomes17} by formalizing this intuition in Isabelle and extending
+the mechanized proofs presented there to show that state-based \CRDTs achieve
+\SEC. We then weaken the network model in \cite{gomes17} and show that
+state-based \CRDTs still maintain \SEC. Finally, we extend our work to gossip
+members of the \textit{sub-lattice}, thus showing that $\delta$-\CRDTs achieve
+\SEC also, even under relatively weak network guarantees.
