@@ -46,9 +46,9 @@ However, saying only that some data is ``replicated'' is under-specified. For
 example: how often is that data updated among multiple participants? How does
 that data behave when multiple participants are modifying it concurrently? Do
 all participants always have the same view of the data, or are there temporary
-divergences between the participants in the system?
+divergences among the participants in the system?
 
-It turns out that the answer of the last question is of paramount importance.
+It turns out that the answer to the last question is of paramount importance.
 Traditionally speaking, in a distributed system, all participants have an
 identical replica of any piece of shared data at all times. That is, at no
 moment in time will there be a replica that could atomically compare its
@@ -159,6 +159,9 @@ individual replica of a state-based \CRDT is at some state $s^i \in S$ for $i \g
 0$, and is initially $s^0$. The value may be queried by any client or other
 replica by invoking $q$. It may be updated with $u$, which has a unique type per
 \CRDT object. Finally, $m$ merges the state of some other remote replica.
+Neither $q$ nor $u$ have pre-determined types, per-se, rather they are
+implementation specific. We discuss a portfolio of examples to illustrate this
+point in Section~\ref{sec:crdt-portfolio}.
 
 Crucially, the states of a given state-based \CRDT form a partially-ordered set
 $\langle S, \sqsubseteq \rangle$. This poset is used to form a join
@@ -174,20 +177,10 @@ $s = s^m \sqcup s^n$ is given as:
 In other words, a $s = s^m \sqcup s^n$ is a least upper-bound of $s^m$ and $s^n$
 if it is the smallest element that is at least as large as both $s^m$ and $s^n$.
 
-For now, we set aside the query operations $q$, and allow $q$'s implementation
-detail that is left to individual \CRDTs, and is specific to their use-case. For
-e.g., it may be that a vector-counter \CRDT's implementation of $q$ is
-something like:
-\[
-  q : S \mapsto \mathbb{N} = \sum_{i \in \mathcal{I}} s(i)
-\]
-In this example, let $S = \mathbb{N}^{|\mathcal{I}|}_+$, where $\mathcal{I}$ is
-the set of replicas, and $s(i)$ returns the $i$th index of the state vector.
-
-We'll focus our attention for now on the implementation of $m$, which is the
-function responsible for merging the states of two independent replicas of a
-given state-based \CRDT. Given a suitable set of states which forms a lattice, we
-assume that:
+For now, we set aside $q$ and $u$, and turn our attention towards the merging
+function $m$. $m$ resolves the states of two \CRDTs into a new state, which is
+then assigned at the replica performing the merge. Given a suitable set of
+states which forms a lattice, we assume that:
 \[
   m(s_1, s_2) = s_1 \sqcup s_2
 \]
@@ -278,9 +271,9 @@ baquero17}.
 
 An op-based \CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
 Section~\ref{sec:state-based-crdts}, $S$, $s^0$, and $q$, retain their
-original meaning (that is, the state set, an initial state, a query function,
-and an update function). In op-based \CRDTs, the pair $(t,u)$ takes the place of
-the $m$ merging function from state-based \CRDTs. $t$ and $u$ correspond to
+original meaning (that is, the state set, an initial state, and a query
+function).  In op-based \CRDTs, the pair $(t,u)$ takes the place of the $m$
+merging function from state-based \CRDTs. $t$ and $u$ correspond to
 \textit{prepare-update} and \textit{effect-update}, respectively. When an update
 is made by a caller (say, for example, incrementing the value of an op-based
 \CRDT counter), it is done in two phases~\citep{shapiro11}:
@@ -378,18 +371,22 @@ above. Like a state-based \CRDT, $\delta$-state based \CRDTs have both internal
 states and message payloads that form a join semi-lattice. This endows the
 $\delta$-state \CRDT with a commutative, associative, and idempotent \emph{join}
 operator, as before. Likewise, this means that the $\delta$-state \CRDT supports
-weak delivery semantics, such as delayed, dropped\footnote{In this thesis, we
+weak delivery semantics, such as delayed, dropped,\footnote{In this thesis, we
 consider dropped messages as having been delayed for an infinite amount of time,
-allowing us to reason about a smaller set of delivery semantics.}, reordered,
+allowing us to reason about a smaller set of delivery semantics.} reordered,
 and duplicated message delivery.
 
 Unlike a state-based \CRDT, however, $\delta$-state \CRDTs do not send their
-internal state $s^k$ after an update at time $k-1$. With sufficient
-conditions\footnote{Effectively, sufficient conditions mean an internal state
-whose updates can be represented as ``smaller'' items within the set of
-reachable states. For example, to communicate the operation ``insert element $x$
-into a set'', send the singleton set $\{x\}$ instead of $S \cup \{ x \}$.}, this
-means that:
+internal state $s^k$ after an update at time $k-1$. We require that these states
+have natural representations of their \emph{updates} which do not require
+sending the full state to all other replicas. In many circumstances, these
+updates can often be represented as ``smaller'' items within the set of all
+possible reachable states. For example, in a \CRDT which supports adding to a
+set of items, a $\delta$-mutation may be the singleton set containing the
+newly-added item, whereas a traditional state-based \CRDT may include the full
+set.
+
+This means that:
 \begin{itemize}
   \item $\delta$-state \CRDTs support the same weak requirements from the network
     as ordinary state-based \CRDTs. That is, they support dropping, duplicating,
@@ -410,6 +407,7 @@ of interest, and they are the subject to which we dedicate the remainder of this
 thesis.
 
 \section{Elementary \CRDT instantiations}
+\label{sec:crdt-portfolio}
 In this section, we provide the specification of three common \CRDT instantiations
 for three of the four aforementioned \CRDT refinements. In particular, we show
 instantiations of the Grow-Only Counter (G-Counter), Positive-Negative Counter
@@ -716,20 +714,5 @@ we will return to in the remaining two examples.
 \end{figure}
 
 \section{Consistency Guarantees}
-\subsection{Causal Consistency}
-Although commutativity and idempotency receive the greatest share of attention
-within \CRDT research, associativity is most often used in the area of
-$\delta$-state \CRDTs. We will discuss a couple of applications of the
-associative property of $\sqcup$ in detail in Chapter~\ref{chap:future-work},
-and overview them briefly now. The associativity of updates means that
-$\delta$-state \CRDTs means that these objects can form an \emph{delta interval},
-say, $\Delta^a_b$, which comprises the updates on the interval of time $[a,b)$.
-When certain restrictions on when an interval $\Delta^a_b$ may be flushed based
-on the values of $a$, $b$, other properties may be attained such as causal
-consistency~\citep{almedia18}. In this thesis, we do not investigate this
-particular application further, although it appears to be a promising future
-direction.
-
 \subsection{Eventual Consistency}
 \subsection{Strong Eventual Consistency}
-\section{Network Semantics}
