@@ -34,6 +34,7 @@ FIGURES += figures/theories/gset-appendix.tex
 FIGURES += figures/theories/gset.tex
 
 FIGURES += figures/scalar-state.pdf
+FIGURES += figures/vector-delta.pdf
 FIGURES += figures/vector-state.pdf
 
 $(ISABELLE_STY) :
