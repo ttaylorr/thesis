@@ -609,72 +609,8 @@ This principle of sending \emph{smaller} states (the $\delta$ mutations) which
 communicate only the \emph{changed} information is a general principle which
 we will return to in the remaining two examples.
 
-\subsection{Example: PN-Counter}
-\label{sec:example-pncounter}
-
-\begin{figure}[H]
-  \[
-    \textsf{PN-Counter}_s = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
-      s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
-      q &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
-        \mathcal{I}} (\snd~s)(i) \\
-      u &: \lambda s,(i,op). \begin{cases}
-             (\fst~s)\left\{ i \mapsto (\fst~s)(i) + 1 \right\} \times (\snd~s) & \text{if $op=+$} \\
-             (\fst~s) \times (\snd~s)\left\{ i \mapsto (\snd~s)(i) + 1 \right\} & \text{if $op=-$} \\
-           \end{cases} \\
-      m &: \lambda s_1, s_2.\, \begin{aligned}
-             &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\fst~s_1) \cup (\fst~s_1)) \right\} \\
-             \times &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\snd~s_1) \cup (\snd~s_1)) \right\}
-           \end{aligned}
-    \end{aligned}\right.
-  \]
-  \caption{state-based \textsf{PN-Counter} \CRDT}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{PN-Counter}_o = \left\{\begin{aligned}
-      S &: \mathbb{N}_+ \times \mathbb{N}_+  \\
-      s^0 &: 0 \times 0 \\
-      q &: \lambda s. (\fst~s) - (\snd~s) \\
-      t &: \lambda i, \mathsf{op}. (i, \mathsf{op}),\quad \mathsf{op} \in \{
-        \mathsf{inc}, \mathsf{dec} \} \\
-      u &: \lambda s,\mathsf{op}. \begin{cases}
-             (\fst~s) + 1 \times (\snd~s) & \text{if $\mathsf{op} = \mathsf{inc}$} \\
-             (\fst~s) \times (\snd~s) + 1 & \text{if $\mathsf{op} = \mathsf{dec}$} \\
-           \end{cases} \\
-    \end{aligned}\right.
-  \]
-  \caption{op-based \textsf{PN-Counter} \CRDT}
-\end{figure}
-
-\begin{figure}[H]
-  \[
-    \textsf{PN-Counter}_\delta = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
-      s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
-      q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
-        \mathcal{I}} (\snd~s)(i) \\
-      u^\delta &: \lambda s,(i,op). \begin{cases}
-             \{ i \mapsto 1 \} \times \emptyset & \text{if $op=+$} \\
-             \emptyset \times \{ i \mapsto 1 \} & \text{if $op=-$} \\
-           \end{cases} \\
-      m^\delta &: \lambda s_1, s_2.\, \begin{aligned}
-             &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\fst~s_1) \cup (\fst~s_1)) \right\} \\
-             \times &\left\{ \max\{ i_1, i_2 \} : i \in \mathsf{dom}((\snd~s_1) \cup (\snd~s_1)) \right\}
-           \end{aligned}
-    \end{aligned}\right.
-  \]
-  \caption{$\delta$-state based \textsf{PN-Counter} \CRDT}
-\end{figure}
-
-
 \subsection{Example: G-Set}
 \label{sec:example-gset}
-
-\TODO[parameterized over a set $\mathcal{X}$]
 
 \begin{figure}[H]
   \centering
