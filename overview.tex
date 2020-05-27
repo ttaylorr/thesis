@@ -222,126 +222,85 @@ $\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
 
 \section{Network Relaxations}
 \label{sec:network-relaxations}
-In our work, it was clear that the provided network model was not flexible
-enough to support an interesting result that state- or $\delta$-state
-\CRDTs achieve strong eventual consistency. Specifically, our concern was that
-the provided network model did not support non-unique message identifiers, i.e.,
-that messages in the network execution could not be duplicated. This is a key
-requirement of op-based \CRDTs, where the operation contained in a message
-delivery is \textit{non-idempotent}, and so at-most-once delivery is a
-requirement for the object to achieve strong eventual consistency.
+In~\citep{gomes17}, Gomes and his co-authors provided a network model which
+makes the following set of assumptions:
+\begin{enumerate}
+  \item All messages received by some node were broadcast by some other node.
+  \item All messages broadcasted by some node were received by that node (i.e.,
+    all messages are delivered locally in a reliable fashion).
+  \item All messages are unique.
+\end{enumerate}
+These assumptions allow the network to drop, reorder, and delay messages in
+transit.
 
-For example, consider a op-based counter, specified as follows \TODO[well-typed?]:
-\[
-\mathsf{GCounter}
-  : \mathbb{I} \hookrightarrow \mathbb{N}
-  = \left\{
-      \begin{aligned}
-        \bot &= \{\} \\
-        \mathsf{op}_i(m) &= \{ i \mapsto 1 \} \\
-        \mathsf{value}(m) &= \sum_{j \in \mathbb{I}} m(j) \\
-        \mathsf{apply}(\mathsf{op}, m) &= \{
-          m(j) + i : (j, i) \in \mathsf{op}
-        \} \cup \{ j : j \in m \land j \notin \mathsf{op} \}
-      \end{aligned}
-    \right.
-\]
-The op-based GCounter in the above specification holds a vector that provides a
-partial mapping between nodes in the system (for which we refer to the set of
-identifiers as $\mathbb{I}$) and their value. If a mapping is missing for some
-$i \in \mathbb{I}$, we assume that $i \mapsto 0$.
+Because op-based \CRDTs only deliver updates once, it is traditional to assume a
+delivery relation $P$ which predicates the set of network executions that we are
+allowed to reason about. For example, a network execution which drops all
+messages in transit, or does not preserve causality cannot be shown to exhibit
+\SEC, and so it is not a member of the relation $P$.  Such an assumption is
+standard in the literature and goes back to the original work
+in~\citep{shapiro11}.
 
-When the counter increments a value $i \in \mathbb{I}$ on $m$,
-$\mathsf{op}_i(m)$ yields the serialized operation instructing the recipient
-\CRDT to increment the value of $i$ by one. This is shown in the definition of
-$\mathsf{apply}$, where the new state is comprised of the old state, where each
-node identifier $j$ is incremented by $i$ (where $i$ is the number of increment
-operations that $j$ has received, and $0$ if it has not been called).
+In~\citep{gomes17}, the authors specify that the following assumptions must be
+met in order to instantiate their
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale--for our purposes we can think of this as the set of preconditions on the
+relation $P$:
+\begin{itemize}
+  \item Messages which have a causal dependence are delivered in-order;
+    concurrent messages may be delivered in any order (i.e., the $\prec$
+    relation is preserved during delivery).
+  \item The set of messages delivered at each node is distinct.\footnote{Note
+    that the messages transited by the network may be non-distinct. This is
+    another standard assumption~\citep{} which can be implemented by tagging
+    each message with a vector clock or assigning a globally unique identifier,
+    and having each receiving node discard duplicates.}
+  \item That concurrent operations commute.
+  \item That correct nodes do not fail, i.e., that they remain responsive during
+    the execution.
+\end{itemize}
 
-This presents a problem for instantiations of the op-based GCounter in network
-environments where messages delivered over that network are not known to have
-unique identifiers. In other words, this presents a problem for op-based
-GCounters in networks that can duplicate messages sent over that network.
+While we consider the above to be a reasonable delivery semantics, we wish to
+strengthen the network model in order to support duplicated messages. This
+behavior is not permitted by the original network model in~\citep{gomes17},
+which assumes that each message in transit on the network has a unique
+identifier.
 
-We first present an example of an execution in an unreliable network for which
-the op-based GCounter fails to achieve consistency:
-\begin{example}
-  Consider an execution among at least two op-based GCounters in a network
-  which is able to duplicate messages. Suppose that the following happens, in
-  this order:
-  \begin{enumerate}
-    \item One op-based GCounter receives an $\mathsf{op}_i(m)$ for some $i$.
-    \item That counter applies the operation locally, taking $i \mapsto 1$. Then,
-      the counter broadcasts the operation over the network, so that replicas may
-      apply the same operation to their own state.
-    \item The network duplicates that message, at least once.
-    \item Other replicas receive more than one copy of the operation, mapping
-      \textit{their} value of $i \mapsto v$ for $v \ge 1$.
-  \end{enumerate}
-  This is a trivial example of the non-idempotency of op-based \CRDT instances
-  requiring at-most-once delivery semantics of the network in which they are
-  instantiated.
-\end{example}
-
-State-based \CRDTs, however, do not require at-most-once semantics in order to
-achieve strong eventual consistency. This follows from the requirement that a
-state-based \CRDT's $\sqcup$ (read: \textit{join} or \textit{meet}) operation be
-idempotent. To illustrate this remark, consider the above example, this time
-using instead the state-based variant of the GCounter, as described
-in~\citep{almedia18}.
+To see this, consider the following example:
 
 \begin{example}
-  Suppose that we use a state-based GCounter, given as follows (as originally
-  described in~\citep{almedia18}):
-  \[
-    \mathsf{GCounter}
-      : \mathbb{I} \hookrightarrow \mathbb{N}
-      = \left\{
-          \begin{aligned}
-            \bot &= \{\} \\
-            \mathsf{inc}_i(m) &= m\{ i \mapsto m(i) + 1 \} \\
-            \mathsf{value}(m) &= \sum_{j \in \mathbb{I}} m(j) \\
-            m \sqcup m' &= \{
-              j \mapsto \max(m(j), m'(j)) :
-              j \in \mathrm{dom}~m \cup \mathrm{dom}~m'
-            \}
-          \end{aligned}
-        \right.
-  \]
+  \label{example:state-op-dup-msgs}
+  Consider two systems which have multiple replicas of \CRDT counters. System
+  $A$ uses op-based counters, and system $B$ uses state-based counters. Consider
+  two replicas in each system, call these $r_1$ and $r_2$. Suppose the following
+  happens in each system:
 
-  Then, in a deployment of at least two state-based GCounters in a network that
-  can duplicate messages, the state of each counter evolves as follows:
-  \begin{enumerate}
-    \item One state-based GCounter receives an $\mathsf{inc}_i(m)$ for some $i$.
-      Then, each counter is left in the following state:
-      \[
-        m_1 = \{ i \mapsto 1 \},\quad
-        m_2 = \bot
-      \]
-    \item Replica $m_1$ sends its state over the network, and $m_2$ applies it
-      locally:
-      \[
-        m_1 = \{ i \mapsto 1 \},\quad
-        m_2 = \{\} \sqcup m_1 = m_1
-      \]
-    \item The network duplicates $m_1$'s state from the previous step of the
-      execution, and $m_2$ applies it again according to the rules of $\sqcup$:
-      \[
-        \begin{aligned}
-          m_1 = \{ i \mapsto 1 \},\quad
-          m_2
-            &= \{ i \mapsto 1 \} \sqcup \{ i \mapsto 1 \} \\
-            &= \{ i \mapsto \max(1, 1) \} \\
-            &= \{ i \mapsto 1 \} = m_1 = m_2 \\
-        \end{aligned}
-      \]
-  \end{enumerate}
+  \begin{itemize}
+    \item A \textsf{inc} operation is performed at replica $r_1$, which causes a
+      message to be sent to all other replicas. In system $A$, this message is
+      $[1, 0, \cdots, 0]$, and in system $B$ this messages is $\textsf{inc}$.
+    \item While in route to replica $r_2$, this message is duplicated, and both
+      copies are received at replica $r_2$.
+  \end{itemize}
+
+  Notice that $q(r_2)$ results in a different value based on whether or not you
+  queried the replica belonging to system $A$ or system $B$. In system $A$, the
+  duplicate message is ``ignored'', since merging the same message twice is
+  idempotent due to $\sqcup$, and $q(r_2) = 1$ as expected. In system $B$, the
+  additional update \emph{is} applied, meaning that $q(r_2) = 2$, which is a
+  safety violation.
 \end{example}
 
-The above example illustrates a general principle, which is the following:
+So, while it is often a safety violation for an op-based \CRDT to receive the
+same message twice\footnote{This is the primary reason why it is a standard
+assumption of op-based network models to disallow non-unique messages},
+state- and $\delta$-state based \CRDTs can and should tolerate this class of
+degenerate behaviors.
+
+The general principle is as follows:
 \begin{theorem} \label{thm:state-sec-dup}
-  State-based \CRDTs exhibit strong eventual consistency when operating in a
-  network environment with non-unique messages.
+  State-based \CRDTs exhibit strong eventual consistency even when operating in
+  a network environment permitting non-unique messages.
 \end{theorem}
 \begin{proof}
   By induction on the number of times $i$ a message $m'$ is received. When $i =
@@ -385,20 +344,22 @@ Network locale~\citep{gomes17}:
   in~\citep{gomes17}.}
 \end{figure}
 
-In particular, we desire to remove the assumption
-$msg{\isacharunderscore}id{\isacharunderscore}unique$, which states that for two
-broadcast messages, $m_1$ and $m_2$ appearing in the set of received messages
-for nodes $i$ and $j$, respectively, that if the $msg{\isacharunderscore}id$ of
-$m_1$ and $m_2$ are the same, then in fact both $m_1$ and $m_2$ are the same,
-and nodes $i$ and $j$ are the same. Said otherwise, every message has an
-\emph{unique} identifier.
+In order to extend the network model of Gomes et. al. to support duplicated
+messages, we need to remove the assumption
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$, which
+allows the enclosed proofs to assume that messages have unique identifiers.
+While this assumption is part of the locale, proofs are allowed to assume that
+if two messages $m_1$ and $m_2$ with the same identifier (i.e., that
+$\isa{msg}\isacharunderscore\isa{id} m_1 = \isa{msg}\isacharunderscore\isa{id}
+m_2$) exists in the history of two nodes, that either the two nodes or two
+messages are identical.
 
-As stated earlier, in order to instantiate our state- and $\delta$-state \CRDTs
-over a network environment in which the result of
-Theorem~\ref{thm:state-sec-dup} will be tested, we must allow for two messages
-to share the same message identifier. In other words, in order to reuse the
-network model from~\citep{gomes17}, we must strengthen it in order to allow for
-messages to be duplicated in ordinary executions of that network model.
+Although our proofs are still instantiated after fulfilling the qualifier $P$,
+we still wish to reason about an expanded set of network executions which
+includes message dropping.\footnote{Since op-based \CRDTs require nice semantics
+$P$, we cannot remove the dependence on $P$ without substantial alternation to
+the library. We leave this to future work, and discuss it in greater detail in
+Chapter~\ref{chap:future-work}.}
 
 For our purposes, we begin by specifying a strengthened Network locale as
 follows:
@@ -412,20 +373,67 @@ follows:
 ~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
 \end{isabelle}
 
-Immediately, many of the proofs related to the network model are no longer
-valid. This can occur due to a trivial issue, such as referencing the removed
-assumption in a simplification step, or a more complex matter, such as relying
-on the message identifier uniqueness property in order to establish some goal.
-We describe our approach for mending those broken proofs in order to reestablish
-the locale's instantiation:
+Removing this assumption immediately invalidates many of the proofs contained
+within the $\isa{network}$ locale. These proofs are broken due to a variety of
+reasons, ranging form something as simple as referencing a now-missing
+assumption, to more complex issues, e.g., a proof which relies on the uniqueness
+of delivered messages.
+
+We now describe our strategy for repairing these proofs:
 \begin{enumerate}
-  \item Remove the assumption
-    $msg{\isacharunderscore}id{\isacharunderscore}unique$ from the Network
-    locale, as shown above.
-  \item In any proof specified within that locale that mentions the
-    aforementioned assumption remove it from tactic arguments.
-  \item If the proof checks successfully without the additional tactic
-    arguments, continue.
-  \item Otherwise, end the proof with the $\isakeyword{sorry}$ keyword and
-    continue.
+  \item First, remove the assumption
+    $\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ from the
+    $\isa{network}\isacharunderscore\isa{with}\isacharunderscore\isa{ops}$
+    locale, as above.
+  \item Identify the set of broken proofs. In each broken proof, do the
+    following:
+    \begin{enumerate}
+      \item Identify the earliest broken proof step.
+      \item Delete it and all proof steps following it.
+      \item Replace the proof body with the term $\isakeyword{sorry}$.
+    \end{enumerate}
+  \item In any order, consider a proof which ends with $\isakeyword{sorry}$, and
+    repair the proof.
 \end{enumerate}
+
+In total, there were four (4) key lemmas which needed repair. These were:
+$\isa{hb}\isacharunderscore\isa{antisym}$,
+$\isa{hb}\isacharunderscore\isa{has}\isacharunderscore\isa{a}\isacharunderscore\isa{reason}$,
+$\isa{hb}\isacharunderscore\isa{cross}\isacharunderscore\isa{node}\isacharunderscore\isa{delivery}$, and
+$\isa{hb}\isacharunderscore\isa{broadcast}\isacharunderscore\isa{broadcast}\isacharunderscore\isa{order}$.
+After removing the
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ assumption,
+each of the above four proofs were able to be repaired automatically by
+Isabelle's proof search keyword $\isakeyword{sledgehammer}$~\citep{wenzel02}.
+
+In each of the \CRDTs that we do verify, we are required to instantiate a lemma
+stating:
+\[
+  \isa{apply}\isacharunderscore\isa{operations}~\isa{xs}~\isacharequal~
+  \isa{apply}\isacharunderscore\isa{operations}~\isa{ys}
+\]
+where $\isa{xs}$ and $\isa{ys}$ are lists of messages delivered to a pair of
+replicas by the network. In other words, no matter what messages are delivered
+in what order, the two replicas attain the same state. Following the original
+proofs provided for op-based \CRDTs in~\citep{gomes17}, our proofs of this lemma
+make the standard assumption that:
+\[
+  \isakeyword{set}~(\isa{node}\isacharunderscore\isa{deliver}\isacharunderscore\isa{messages}~\isa{xs})~\isacharequal~
+  \isakeyword{set}~(\isa{node}\isacharunderscore\isa{deliver}\isacharunderscore\isa{messages}~\isa{ys})
+\]
+Note that although we require that the set of operations delivered at two nodes
+is identical in order for those two nodes to attain the same value, we are able
+to reason over an expanded set of network behaviors. For example, if some
+message $m$ appears in either of the two sets above, we know that it only
+appears in that node's history once, by the
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ assumption.
+But without that assumption, we know instead that it appears \emph{at least}
+once in each of the node's log of history.
+
+This is a key distinction, since not knowing how many times a message was
+delivered to either of the two replicas means that we are able to conclude that
+they reach the same state if the same set of messages is delivered \emph{at
+least once} to each of the replicas. Said otherwise, it does not matter how many
+times a message was delivered at each of two replicas, so long as it was
+delivered at least once at both. This allows us to exercise the latter case of
+Example~\ref{example:state-op-dup-msgs} using the strengthened network model.
