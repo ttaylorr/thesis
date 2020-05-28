@@ -4,7 +4,7 @@
 In this chapter, we discuss our efforts mechanizing proofs that two state- and
 $\delta$-state based \CRDTs achieve \SEC.  We discuss our efforts to weaken the
 underlying network model to support non-unique messages, and then show that both
-the state- and $\delta$-state based G-Counter and G-Set inhabit \SEC.  Finally,
+the state- and $\delta$-state based G-Counter and G-Set inhabit \SEC. Finally,
 we discuss an alternative encoding of the reduction in
 Chapter~\ref{chap:crdt-reductions} for $\delta$-state \CRDTs.
 
@@ -401,6 +401,7 @@ the G-Counter \SEC is mostly automatic, up to giving Isabelle some hints about
 rewrite and simplification rules that it should apply.
 
 \subsection{State-based GSet}
+\label{sec:state-gset}
 
 Now that we have verified a state-based G-Counter \CRDT, we turn our attention
 to the other \CRDT object for study in this thesis. This will be the state-based
@@ -547,15 +548,34 @@ only to $\delta$-fragments.
 \subsection{$\delta$-state based G-Set}
 
 Finally, we turn our attention to the remaining \CRDT instance: the G-Set.
-Similar to our experience verifying the $\delta$-based G-Counter, we reuse much
-of the\TODO[prose that we're reusing most of the original proofs]
+Similar to our experience verifying the $\delta$-based G-Counter, the
+specification of the \CRDT itself is identical to the original encoding in
+Section~\ref{sec:state-gset}, following our intuition in
+Maxim~\ref{maxim:delta-as-state}.
+
+For completeness, we present the full instantiation of this type (again leaving
+the additional proofs to the Appendix in Section~\ref{sec:app-delta-gset}):
 
 \begin{figure}[H]
   \input{figures/theories/delta-gset}
-  \caption{Isabelle definition of the $\delta$-state G-Counter \CRDT.}
+  \caption{Isabelle definition of the $\delta$-state G-Set \CRDT.}
 \end{figure}
 
-\TODO[identify the difference in $\isa{insert}$]
+Notice that our encoding is identical as in the state-based G-Set example, but
+the definition of $\isa{insert}$ has changed. Instead of constructing and
+sending the union of the current set and the singleton set containing the item
+we wish to add, we construct only the singleton set.
+
+This guides our understanding that if this \CRDT only sends messages that are
+able to be generated from the modified $\isa{insert}$ function, that it will
+achieve \SEC, and indeed we are able to instantiate the
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale over this type. Because our proofs are inductive over state
+\emph{transitions}, we have implicitly proved the case where only
+$\delta$-fragments are sent as well.
+
+In the following section, we discuss an alternate encoding which permits a more
+direct proof of this fact.
 
 \section{Alternative encoding of the $\delta$-state reduction}
 \label{sec:alternate-delta-encoding}

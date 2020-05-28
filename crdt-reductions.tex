@@ -219,4 +219,13 @@ $\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
     and implementation.
 \end{enumerate}
 
-\TODO[conclude]
+\section{Conclusion}
+In this brief chapter, we outline a key strategy for the mechanized proofs
+presented in Chapter~\ref{chap:example-crdts}. In particular, we identify two
+important reductions: that state-based \CRDTs can be encoded as op-based \CRDTs
+(Maxim~\ref{maxim:state-as-op}) and that $\delta$-state \CRDTs are restricted
+forms of state-based \CRDTs (Maxim~\ref{maxim:delta-as-state}).
+
+We presented a non-mechanized proof of Maxim~\ref{maxim:state-as-op}, and
+conducted an informal argument of Maxim~\ref{maxim:delta-as-state}. To our
+knowledge, this is the first time that these reductions have been identified.
