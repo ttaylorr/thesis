@@ -217,14 +217,13 @@ The reminder of this thesis is ordered as follows:
     definitions of op- and state-based \CRDTs, and conduct a thorough discussion
     of their relative strengths and weaknesses. Likewise, we present a summary
     of some work in the area of $\delta$-state \CRDTs, and present its strengths.
-  \item In Chapter~\ref{chap:overview}, we outline our specific research goals,
-    as well as the work in~\citep{almedia18} upon which much of our work is
-    built. We lay out our specific approach, as well as some of the key insights
-    that guided our proof strategy.
-  \item In Chapter~\ref{chap:results}, we discuss the outcome of our approach by
-    presenting a portfolio of successfully-verified $\delta$-state \CRDTs, as
-    well as describe our efforts in weakening the network model in order to
-    verify these objects over a non-trivial set of network behaviors.
+  \item In Chapter~\ref{chap:crdt-reductions}, we outline a pair of reductions
+    between state-, op-, and $\delta$-state based \CRDTs which guides the
+    majority of our proof strategy.
+  \item In Chapter~\ref{chap:example-crdts}, we discuss the outcome of our
+    approach by presenting a portfolio of successfully-verified $\delta$-state
+    \CRDTs, as well as describe our efforts in weakening the network model in
+    order to verify these objects over a non-trivial set of network behaviors.
   \item In Chapter~\ref{chap:future-work}, we suggest future
     research directions. We consider a handful of areas in which formalizing
     existing results may be fruitful, as well as a handful of additional

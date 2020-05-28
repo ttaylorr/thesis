@@ -1,9 +1,11 @@
-\chapter{Overview}
-\label{chap:overview}
+\chapter{\CRDT reductions}
+\label{chap:crdt-reductios}
 
-This chapter outlines the specific research goals we have in verifying Strong
-Eventual Consistency in $\delta$-state \CRDTs. Specifically, we will discuss the
-following:
+This chapter outlines a key component of our proof strategy, which is a pair of
+reductions that allow us to view state-based \CRDTs as a refinement of op-based
+\CRDTs, and $\delta$-state \CRDTs as a refinement of state-based ones.
+
+Specifically, we will discuss the following:
 \begin{itemize}
   \item In Section~\ref{sec:state-as-op}, we will describe a mapping $\phi$ to
     view state-based \CRDTs in terms of their op-based counterparts.
@@ -11,9 +13,6 @@ following:
     between state- and $\delta$-state based \CRDTs. This intuition will allow us
     to use $\phi$ to reason about $\delta$-state \CRDTs in terms of op-based
     \CRDTs.
-  \item Finally, in Section~\ref{sec:network-relaxations} we will motivate an
-    area in which the underlying delivery semantics needed strengthening, and
-    describe the manner in which we updated the relevant proofs.
 \end{itemize}
 
 In this section, we will identify and discuss the two key intuitions which guide

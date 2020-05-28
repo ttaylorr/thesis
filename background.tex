@@ -813,9 +813,9 @@ defined identically. We present the full definition as follows:
 
 The only difference between this \CRDT instantiation and the state-based one is
 in the definition of $(t,u)$.\footnote{This is a pattern that will become
-familiar during Chapter~\ref{chap:results}.} In the state-based \CRDT, we sent
-the updated state, i.e., $s \cup \{ x \}$. In the op-based variant, we send a
-\emph{representation} of the effect, which we take to be the pair
+familiar during Chapter~\ref{chap:example-crdts}.} In the state-based \CRDT, we
+sent the updated state, i.e., $s \cup \{ x \}$. In the op-based variant, we send
+a \emph{representation} of the effect, which we take to be the pair
 $(\textsf{ins}, x)$, where $\textsf{ins}$ is a sentinel marker indicating that
 the second element in the pair should be inserted.
 
@@ -828,7 +828,7 @@ Finally, we turn our attention to the $\delta$-state based G-Set \CRDT. As was
 the case with the $\delta$-state based G-Counter \CRDT, this object is defined
 identically as to the state-based counter, with the notable exception of its
 update function, $u$.\footnote{This again will be another familiar pattern in
-Chapter~\ref{chap:results}.}
+Chapter~\ref{chap:example-crdts}.}
 
 For full formality, we present its definition below:
 

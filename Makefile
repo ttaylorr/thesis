@@ -5,11 +5,11 @@ SECTIONS += abstract.tex
 SECTIONS += acknowledgements.tex
 SECTIONS += background.tex
 SECTIONS += conclusion.tex
+SECTIONS += crdt-reductions.tex
 SECTIONS += dedication.tex
+SECTIONS += example-crdts.tex
 SECTIONS += future-work.tex
 SECTIONS += introduction.tex
-SECTIONS += overview.tex
-SECTIONS += results.tex
 SECTIONS += title.tex
 
 ISABELLE ?= /Applications/Isabelle2019.app/Isabelle/bin/isabelle
