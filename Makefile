@@ -30,6 +30,11 @@ FIGURES += figures/theories/delta-gcounter.tex
 FIGURES += figures/theories/delta-gset-appendix.tex
 FIGURES += figures/theories/delta-gset.tex
 
+FIGURES += figures/theories/delta-gcounter-refined-ops.tex
+FIGURES += figures/theories/delta-gcounter-refined-state.tex
+FIGURES += figures/theories/delta-gset-refined-ops.tex
+FIGURES += figures/theories/delta-gset-refined-state.tex
+
 FIGURES += figures/theories/gcounter-appendix.tex
 FIGURES += figures/theories/gcounter-comm-assoc.tex
 FIGURES += figures/theories/gcounter-commute.tex

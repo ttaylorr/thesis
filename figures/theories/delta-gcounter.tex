@@ -1,22 +1,7 @@
 \begin{isabellebody}
-\isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
-\ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\isanewline
-\isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
-\ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ state{\isachardoublequoteclose}\isanewline
-\isanewline
-\isacommand{fun}\isamarkupfalse%
-\ option{\isacharunderscore}max\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}int\ option\ {\isasymRightarrow}\ int\ option\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\ \ \isakeyword{where}\isanewline
-{\isachardoublequoteopen}option{\isacharunderscore}max\ {\isacharparenleft}Some\ a{\isacharparenright}\ {\isacharparenleft}Some\ b{\isacharparenright}\ {\isacharequal}\ Some\ {\isacharparenleft}max\ a\ b{\isacharparenright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
-{\isachardoublequoteopen}option{\isacharunderscore}max\ x\ None\ {\isacharequal}\ x{\isachardoublequoteclose}\ {\isacharbar}\isanewline
-{\isachardoublequoteopen}option{\isacharunderscore}max\ None\ y\ {\isacharequal}\ y{\isachardoublequoteclose}\isanewline
-\isanewline
 \isacommand{fun}\isamarkupfalse%
 \ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
 {\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}{\isasymlambda}j{\isachardot}\ if\ who\ {\isacharequal}\ j\isanewline
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ then\ Some\ {\isacharparenleft}{\isadigit{1}}\ {\isacharplus}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ None\ {\isasymRightarrow}\ {\isadigit{0}}\ {\isacharbar}\ Some\ {\isacharparenleft}x{\isacharparenright}\ {\isasymRightarrow}\ x{\isacharparenright}{\isacharparenright}\isanewline
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ else\ None{\isacharparenright}{\isachardoublequoteclose}\isanewline
-\isanewline
-\isacommand{fun}\isamarkupfalse%
-\ delta{\isacharunderscore}gcounter{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
-{\isachardoublequoteopen}delta{\isacharunderscore}gcounter{\isacharunderscore}op\ theirs\ ours\ {\isacharequal}\ Some\ {\isacharparenleft}{\isasymlambda}\ x{\isachardot}\ option{\isacharunderscore}max\ {\isacharparenleft}theirs\ x{\isacharparenright}\ {\isacharparenleft}ours\ x{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
 \end{isabellebody}

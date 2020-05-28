@@ -1,0 +1,13 @@
+\begin{isabellebody}
+\isacommand{fun}\isamarkupfalse%
+\ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}who{\isacharcomma}\ {\isacharparenleft}{\isadigit{1}}\ {\isacharplus}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ None\ {\isasymRightarrow}\ {\isadigit{0}}\ {\isacharbar}\ Some\ {\isacharparenleft}x{\isacharparenright}\ {\isasymRightarrow}\ x{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ op{\isacharunderscore}to{\isacharunderscore}state\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}op{\isacharunderscore}to{\isacharunderscore}state\ {\isacharparenleft}who{\isacharcomma}\ count{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}{\isasymlambda}x{\isachardot}\ if\ x\ {\isacharequal}\ who\ then\ Some\ count\ else\ None{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ delta{\isacharunderscore}gcounter{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}delta{\isacharunderscore}gcounter{\isacharunderscore}op\ theirs\ ours\ {\isacharequal}\ Some\ {\isacharparenleft}{\isasymlambda}\ x{\isachardot}\ option{\isacharunderscore}max\ {\isacharparenleft}{\isacharparenleft}op{\isacharunderscore}to{\isacharunderscore}state\ theirs{\isacharparenright}\ x{\isacharparenright}\ {\isacharparenleft}ours\ x{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+\end{isabellebody}
