@@ -12,5 +12,7 @@ session src = HOL +
     DeltaGSet
     GCounter
     GSet
+    RestrictedDeltaGCounter
+    RestrictedDeltaGSet
   document_files
     "root.tex"
