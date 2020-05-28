@@ -26,12 +26,24 @@ THEORY = src/output/document.pdf
 FIGURES =
 FIGURES += figures/theories/delta-gcounter-appendix.tex
 FIGURES += figures/theories/delta-gcounter.tex
+
 FIGURES += figures/theories/delta-gset-appendix.tex
 FIGURES += figures/theories/delta-gset.tex
-FIGURES += figures/theories/gcounter-additional.tex
+
 FIGURES += figures/theories/gcounter-appendix.tex
+FIGURES += figures/theories/gcounter-comm-assoc.tex
+FIGURES += figures/theories/gcounter-commute.tex
+FIGURES += figures/theories/gcounter-convergence.tex
+FIGURES += figures/theories/gcounter-misc.tex
+FIGURES += figures/theories/gcounter-state-op.tex
+FIGURES += figures/theories/gcounter-state-sec.tex
+FIGURES += figures/theories/gcounter-state.tex
 FIGURES += figures/theories/gcounter.tex
+
 FIGURES += figures/theories/gset-appendix.tex
+FIGURES += figures/theories/gset-state-op.tex
+FIGURES += figures/theories/gset-state-sec.tex
+FIGURES += figures/theories/gset-state.tex
 FIGURES += figures/theories/gset.tex
 
 FIGURES += figures/scalar-state.pdf

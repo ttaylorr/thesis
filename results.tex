@@ -1,27 +1,575 @@
-\chapter{Results}
+\chapter{\TODO}
 \label{chap:results}
 
-\section*{Dumping Ground}
+% \section*{Dumping Ground}
+%
+% \begin{figure}[H]
+% \input{figures/theories/gcounter}
+% \end{figure}
+%
+% \begin{figure}[H]
+% \input{figures/theories/delta-gcounter}
+% \end{figure}
+%
+% \begin{figure}[H]
+% \input{figures/theories/gset}
+% \end{figure}
+%
+% \begin{figure}[H]
+% \input{figures/theories/delta-gset}
+% \end{figure}
+%
+% \TODO
+
+In this chapter, we discuss our efforts mechanizing proofs that two state- and
+$\delta$-state based \CRDTs achieve \SEC. Namely, we verify that both variants
+of the G-Counter and G-Set achieve \SEC. We also discuss our efforts to weaken
+the underlying network model to support non-unique messages. \TODO
+
+\section{Network Relaxations}
+\label{sec:network-relaxations}
+In~\citep{gomes17}, Gomes and his co-authors provided a network model which
+makes the following set of assumptions:
+\begin{enumerate}
+  \item All messages received by some node were broadcast by some other node.
+  \item All messages broadcast by some node were received by that node (i.e.,
+    all messages are delivered locally in a reliable fashion).
+  \item All messages are unique.
+\end{enumerate}
+These assumptions allow the network to drop, reorder, and delay messages in
+transit.
+
+Because op-based \CRDTs only deliver updates once, it is traditional to assume a
+delivery relation $P$ which predicates the set of network executions that we are
+allowed to reason about. For example, a network execution which drops all
+messages in transit, or does not preserve causality cannot be shown to exhibit
+\SEC, and so it is not a member of the relation $P$.  Such an assumption is
+standard in the literature and goes back to the original work
+in~\citep{shapiro11}.
+
+In~\citep{gomes17}, the authors specify that the following assumptions must be
+met in order to instantiate their
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale--for our purposes we can think of this as the set of preconditions on the
+relation $P$:
+\begin{itemize}
+  \item Messages which have a causal dependence are delivered in-order;
+    concurrent messages may be delivered in any order (i.e., the $\prec$
+    relation is preserved during delivery).
+  \item The set of messages delivered at each node is distinct.\footnote{Note
+    that the messages transited by the network may be non-distinct. This is
+    another standard assumption~\citep{} which can be implemented by tagging
+    each message with a vector clock or assigning a globally unique identifier,
+    and having each receiving node discard duplicates.}
+  \item That concurrent operations commute.
+  \item That correct nodes do not fail, i.e., that they remain responsive during
+    the execution.
+\end{itemize}
+
+While we consider the above to be a reasonable delivery semantics, we wish to
+strengthen the network model in order to support duplicated messages. This
+behavior is not permitted by the original network model in~\citep{gomes17},
+which assumes that each message in transit on the network has a unique
+identifier.
+
+To see this, consider the following example:
+
+\begin{example}
+  \label{example:state-op-dup-msgs}
+  Consider two systems which have multiple replicas of \CRDT counters. System
+  $A$ uses op-based counters, and system $B$ uses state-based counters. Consider
+  two replicas in each system, call these $r_1$ and $r_2$. Suppose the following
+  happens in each system:
+
+  \begin{itemize}
+    \item A \textsf{inc} operation is performed at replica $r_1$, which causes a
+      message to be sent to all other replicas. In system $A$, this message is
+      $[1, 0, \cdots, 0]$, and in system $B$ this messages is $\textsf{inc}$.
+    \item While in route to replica $r_2$, this message is duplicated, and both
+      copies are received at replica $r_2$.
+  \end{itemize}
+
+  Notice that $q(r_2)$ results in a different value based on whether or not you
+  queried the replica belonging to system $A$ or system $B$. In system $A$, the
+  duplicate message is ``ignored'', since merging the same message twice is
+  idempotent due to $\sqcup$, and $q(r_2) = 1$ as expected. In system $B$, the
+  additional update \emph{is} applied, meaning that $q(r_2) = 2$, which is a
+  safety violation.
+\end{example}
+
+So, while it is often a safety violation for an op-based \CRDT to receive the
+same message twice\footnote{This is the primary reason why it is a standard
+assumption of op-based network models to disallow non-unique messages},
+state- and $\delta$-state based \CRDTs can and should tolerate this class of
+degenerate behaviors.
+
+The general principle is as follows:
+\begin{theorem} \label{thm:state-sec-dup}
+  State-based \CRDTs exhibit strong eventual consistency even when operating in
+  a network environment permitting non-unique messages.
+\end{theorem}
+\begin{proof}
+  By induction on the number of times $i$ a message $m'$ is received. When $i =
+  1$, the goal is trivially established. When $i > 1$, the idempotency of
+  $\sqcup$ shows that:
+  \[
+    m \sqcup \underbrace{m' \sqcup \cdots \sqcup m'}_{\text{$i-1$ times}} \sqcup~m'
+      = m \sqcup m' \sqcup m'
+      = m \sqcup m'
+  \]
+  where the second equality follows from the inductive hypothesis, and the third
+  from the fact that $m' \sqcup m' = m'$ by the idempotency of $\sqcup$.
+\end{proof}
+
+This result guides our approach as follows: to show a stronger result that uses
+Theorem~\ref{thm:state-sec-dup} (i.e., that state- and $\delta$-state based
+\CRDTs achieve strong eventual consistency no matter how many times), the network
+model originally presented in~\citep{gomes17} should be extended to remove the
+assumption that message identifiers are unique.
+
+\subsection{Delivery Semantics}
+In their original network model, the authors of~\citep{gomes17} use an Isabelle
+\textit{locale} in order to parameterize varying instantiations of the network
+based on certain assumptions. They provide the following definition for the
+Network locale~\citep{gomes17}:
+\begin{figure}[H]
+\begin{isabelle}
+~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
+\isacommand{locale}\ network\ {\isacharequal}\ node{\isacharunderscore}histories\ history\\
+~~~~\isakeyword{for}\>history\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ {\isasymRightarrow}\ {\isacharprime}msg\ event\ list{\isachardoublequoteclose}\ {\isacharplus}\\
+~~~~\isakeyword{fixes}\>msg{\isacharunderscore}id\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}msg\ {\isasymRightarrow}\ {\isacharprime}msgid{\isachardoublequoteclose}\\
+~~~~\isakeyword{assumes}\ delivery{\isacharunderscore}has{\isacharunderscore}a{\isacharunderscore}cause{\isacharcolon}\\
+\>\>{\isasymlbrakk}\ {\isachardoublequoteopen}Deliver\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>\>{\isasymrbrakk}\ {\isasymLongrightarrow}\ {\isasymexists}j{\isachardot}\ Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright}{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m{\isadigit{1}}\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright};\\
+\>\>\>Broadcast\ m{\isadigit{2}}\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright};\\
+\>\>\>msg{\isacharunderscore}id\ m{\isadigit{1}}\ {\isacharequal}\ msg{\isacharunderscore}id\ m{\isadigit{2}}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\ i\ {\isacharequal}\ j\ {\isasymand}\ m{\isadigit{1}}\ {\isacharequal}\ m{\isadigit{2}}{\isachardoublequoteclose}
+\end{isabelle}
+\centering
+\caption{Isabelle specification of the Network locale as given
+  in~\citep{gomes17}.}
+\end{figure}
+
+In order to extend the network model of Gomes et. al. to support duplicated
+messages, we need to remove the assumption
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$, which
+allows the enclosed proofs to assume that messages have unique identifiers.
+While this assumption is part of the locale, proofs are allowed to assume that
+if two messages $m_1$ and $m_2$ with the same identifier (i.e., that
+$\isa{msg}\isacharunderscore\isa{id} m_1 = \isa{msg}\isacharunderscore\isa{id}
+m_2$) exists in the history of two nodes, that either the two nodes or two
+messages are identical.
+
+Although our proofs are still instantiated after fulfilling the qualifier $P$,
+we still wish to reason about an expanded set of network executions which
+includes message dropping.\footnote{Since op-based \CRDTs require nice semantics
+$P$, we cannot remove the dependence on $P$ without substantial alternation to
+the library. We leave this to future work, and discuss it in greater detail in
+Chapter~\ref{chap:future-work}.}
+
+For our purposes, we begin by specifying a strengthened Network locale as
+follows:
+\begin{isabelle}
+~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
+\isacommand{locale}\ network\ {\isacharequal}\ node{\isacharunderscore}histories\ history\\
+~~~~\isakeyword{for}\>history\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ {\isasymRightarrow}\ {\isacharprime}msg\ event\ list{\isachardoublequoteclose}\ {\isacharplus}\\
+~~~~\isakeyword{fixes}\>msg{\isacharunderscore}id\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}msg\ {\isasymRightarrow}\ {\isacharprime}msgid{\isachardoublequoteclose}\\
+~~~~\isakeyword{assumes}\ delivery{\isacharunderscore}has{\isacharunderscore}a{\isacharunderscore}cause{\isacharcolon}\\
+\>\>{\isasymlbrakk}\ {\isachardoublequoteopen}Deliver\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>\>{\isasymrbrakk}\ {\isasymLongrightarrow}\ {\isasymexists}j{\isachardot}\ Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright}{\isachardoublequoteclose}\\
+~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
+\end{isabelle}
+
+Removing this assumption immediately invalidates many of the proofs contained
+within the $\isa{network}$ locale. These proofs are broken due to a variety of
+reasons, ranging form something as simple as referencing a now-missing
+assumption, to more complex issues, e.g., a proof which relies on the uniqueness
+of delivered messages.
+
+We now describe our strategy for repairing these proofs:
+\begin{enumerate}
+  \item First, remove the assumption
+    $\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ from the
+    $\isa{network}\isacharunderscore\isa{with}\isacharunderscore\isa{ops}$
+    locale, as above.
+  \item Identify the set of broken proofs. In each broken proof, do the
+    following:
+    \begin{enumerate}
+      \item Identify the earliest broken proof step.
+      \item Delete it and all proof steps following it.
+      \item Replace the proof body with the term $\isakeyword{sorry}$.
+    \end{enumerate}
+  \item In any order, consider a proof which ends with $\isakeyword{sorry}$, and
+    repair the proof.
+\end{enumerate}
+
+In total, there were four (4) key lemmas which needed repair. These were:
+$\isa{hb}\isacharunderscore\isa{antisym}$,
+$\isa{hb}\isacharunderscore\isa{has}\isacharunderscore\isa{a}\isacharunderscore\isa{reason}$,
+$\isa{hb}\isacharunderscore\isa{cross}\isacharunderscore\isa{node}\isacharunderscore\isa{delivery}$, and
+$\isa{hb}\isacharunderscore\isa{broadcast}\isacharunderscore\isa{broadcast}\isacharunderscore\isa{order}$.
+After removing the
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ assumption,
+each of the above four proofs were able to be repaired automatically by
+Isabelle's proof search keyword $\isakeyword{sledgehammer}$~\citep{wenzel02}.
+
+In each of the \CRDTs that we do verify, we are required to instantiate a lemma
+stating:
+\[
+  \isa{apply}\isacharunderscore\isa{operations}~\isa{xs}~\isacharequal~
+  \isa{apply}\isacharunderscore\isa{operations}~\isa{ys}
+\]
+where $\isa{xs}$ and $\isa{ys}$ are lists of messages delivered to a pair of
+replicas by the network. In other words, no matter what messages are delivered
+in what order, the two replicas attain the same state. Following the original
+proofs provided for op-based \CRDTs in~\citep{gomes17}, our proofs of this lemma
+make the standard assumption that:
+\[
+  \isakeyword{set}~(\isa{node}\isacharunderscore\isa{deliver}\isacharunderscore\isa{messages}~\isa{xs})~\isacharequal~
+  \isakeyword{set}~(\isa{node}\isacharunderscore\isa{deliver}\isacharunderscore\isa{messages}~\isa{ys})
+\]
+Note that although we require that the set of operations delivered at two nodes
+is identical in order for those two nodes to attain the same value, we are able
+to reason over an expanded set of network behaviors. For example, if some
+message $m$ appears in either of the two sets above, we know that it only
+appears in that node's history once, by the
+$\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ assumption.
+But without that assumption, we know instead that it appears \emph{at least}
+once in each of the node's log of history.
+
+This is a key distinction, since not knowing how many times a message was
+delivered to either of the two replicas means that we are able to conclude that
+they reach the same state if the same set of messages is delivered \emph{at
+least once} to each of the replicas. Said otherwise, it does not matter how many
+times a message was delivered at each of two replicas, so long as it was
+delivered at least once at both. This allows us to exercise the latter case of
+Example~\ref{example:state-op-dup-msgs} using the strengthened network model.
+
+\section{State-based \CRDTs}
+Equipped with a relaxed network model, we are now ready to verify two examples
+of state-based \CRDTs.
+
+\subsection{State-based GCounter}
+We begin first with the GCounter, the formal definition of which can be found in
+Section~\ref{sec:example-gcounter}. Following our intuition in
+Maxim~\ref{maxim:state-as-op}, we define a type to represent the $\isa{state}$ and
+$\isa{operation}$ of a state-based G-Counter, presented below:
 
 \begin{figure}[H]
-\input{figures/theories/gcounter}
+  \input{figures/theories/gcounter-state}
+  \caption{Isabelle definitions for $\isa{state}$ and $\isa{operation}$ for a
+    state-based G-Counter \CRDT.}
+\end{figure}
+
+Here, we let the state be a partial mapping from a transparent
+$\isacharprime\isa{id}$ type (the value of which uniquely identifies a replica
+in the system) to an $\isa{int}$ which specifies the number of increment
+operations performed at that replica. Like in
+Section~\ref{sec:example-gcounter}, this defines a vector-like object, where
+each slot in the vector corresponds to the number of increment operations
+performed at some unique replica in the system. We define this mapping to be
+partial, where the $\isa{None}$ value signals that no increments have been
+performed at a given node.\footnote{This choice is arbitrary, and could have
+easily have been implemented as mapping to $0$ instead.}
+
+Next we define the operation to be a type-level synonym for the
+$\isacharprime\isa{id}~\isa{state}$ type. This encodes that operations
+\emph{are} states. We interpret that upon receipt of an operation that we
+replace our current state with the join of it and the state encoded by the
+operation, which is an implementation of Maxim~\ref{maxim:state-as-op}.
+
+Before introducing the interpretation of
+$\isa{gcounter}\isacharunderscore\isa{op}$ (which will be responsible for
+performing this join operation as described), we look at a few other functions
+which are defined to act over this type:
+
+\begin{figure}[H]
+  \input{figures/theories/gcounter-misc}
+  \caption{Isabelle definitions for state-based GCounter-related functions.}
+\end{figure}
+
+The function $\isa{inc}$ specifies (for demonstration purposes) how to increment
+the value in a vector for some node. That is, $\isa{inc}$ specifies the
+procedure to execute when an increment operation is performed at some replica.
+Since our proofs reason purely about transitions of states, and not the external
+forces that drive them, this function is never called by our proofs, but merely
+left for the reader as a demonstration of how to drive the system.
+
+The other function $\isa{option}\isacharunderscore\isa{max}$ specifies the
+pair-wise maximum of two $\isa{int}~\isa{option}$ values. Note that these are
+the right-hand side of the mapping in $\isacharprime\isa{id}~\isa{state}$, and
+so this function is used to merge the state received from some other replica.
+We will prove some additional facts about this function shortly, but for now we
+interpret it as taking the maximum of two optional integers, where a present
+integer is always preferred over an absent one\footnote{That is, the maximum of
+$\isa{Some}~x$ and $\isa{None}$ is $\isa{Some}~x$.}, and the maximum of two
+absent integers is $\isa{None}$.
+
+Now that we have a way to interpret the pair-wise maximum of two states which
+constitute a join, we can specify our definition of the ``operation'' for a
+state-based G-Counter \CRDT. Recall that as in Maxim~\ref{maxim:state-as-op}, we
+need to specify an operation which is the join of two states. We present now the
+definition as used in our proofs:
+
+\begin{figure}[H]
+  \input{figures/theories/gcounter-state-op}
+  \caption{Isabelle definition for the ``operation'' of a state-based G-Counter
+    \CRDT.}
+\end{figure}
+
+Here, we specify a function that produces a partial mapping from an operation
+and state to a new state. The function is not total (that is, it \emph{can}
+return $\isa{None}$ for some input) to indicate a crash. For our purposes, the
+function \emph{is} total, that is, it never returns $\isa{None}$ for any
+input.\footnote{Note that this $\isa{None}$ is different from the partial
+mapping of the $\isacharprime\isa{id}~\isa{state}$ type, which specifies that
+the \emph{count} of increment operations at some replicas may zero. Returning
+$\isa{None}$ from $\isa{gcounter}\isacharunderscore\isa{op}$ indicates that
+there is no state at all, i.e., a crash has occurred.} Here, the state on the
+left-hand side indicates the state that our replica currently has. The
+``operation'' so-to-speak is the state at some \emph{other} replica. By encoding
+the state from a remote replica in this fashion, we are implicitly saying that
+this state should be joined with our current state, and that the result of this
+join should replace our current state. So, we return a new state, which is a
+function which maps node identifiers to the maximum of the associated value
+between our previous state, and the state at some other replica.
+
+For example, if our state in a four-replica system is:
+\[
+  \{ r_1 : 1,\, r_2 : \bot,\, r_3 : 2,\, r_4 : \bot \}
+\]
+and the state of some replica is:
+\[
+  \{ r_1 : \bot,\, r_2 : 1,\, r_3 : 3,\, r_4 : \bot \}
+\]
+the resulting state is:
+\[
+  \{ r_1 : 1,\, r_2 : 1,\, r_3 : 3,\, r_4 : \bot \}
+\]
+
+In Isabelle, we encode this as a function which forms a closure over the local
+and remote states, and then computes the maximum some given node identifier
+$\isa{x}$. In practice, this is the lazy equivalent to computing all of the
+values up front upon merging.
+
+Now that we have an instantiation of how to modify and merge states (the
+equivalent of the $u$ and $m$), it remains to show that this is a suitable
+initiation of the
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale.\footnote{Recall that instating this locale is equivalent to a proof that
+the object it is being instantiated with has \SEC.}
+
+A first-try instantiation shows that it is not possible to do so without
+additional proofs. Upon inspecting the unmet goals, we can deduce that Isabelle
+wants a proof of the commutativity and associativity of
+$\isa{option}\isacharunderscore\isa{max}$, the key function used to implement
+the merge of two states. We leave the full definitions of these proofs to
+Section~\ref{sec:app-gcounter-comm-assoc}; most are able to be completed with
+induction and term simplification only, and so are not of great interest to this
+section.
+
+Once we have a proof of commutativity and associativity (Isabelle can infer that
+$\isa{option}\isacharunderscore\isa{max}$ is idempotent automatically), we then
+state an important lemma and corollary, which are as follows:
+
+\begin{figure}[H]
+  \input{figures/theories/gcounter-commute}
+  \caption{Isabelle proofs that concurrent operations commute in the state-based
+    G-Counter.}
 \end{figure}
 
 \begin{figure}[H]
-\input{figures/theories/delta-gcounter}
+  \input{figures/theories/gcounter-convergence}
+  \caption{Isabelle proofs that the state-based G-Counter is convergent.}
 \end{figure}
 
-\begin{figure}[H]
-\input{figures/theories/gset}
-\end{figure}
+This and the above proof establish the following two facts:
+\begin{itemize}
+  \item Operations that have been delivered at some node can be applied in any
+    order up to causality and still achieve the same state (there is a more
+    general result, since \emph{all} operations on the G-Counter are concurrent,
+    but we specialize to showing a more specific case to guide Isabelle's reuse
+    of the proof).
+  \item Having the same set of operations delivered at any two replicas ensures
+    that those replicas are in the same state.
+\end{itemize}
+
+The first property is a helpful lemma which is used in internal proofs, but the
+second lemma should be familiar to the reader: this is the safety property of
+\SEC! Note also that this is the first time that we are seeing our efforts in
+weakening the network model bear fruit. That is, even though the two \emph{sets}
+must be equal, we do not make a restriction on the number of times that a
+particular message is delivered at either node. This allows us to prove a
+stronger result that this \CRDT achieves a consistent result despite the number
+of times that a message was (or was not) duplicated.
+
+Finally, once we have shown these two properties, we can instantiate the
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale, which is witness to the fact that this \CRDT object achieves \SEC. We
+present the instantiation now, and leave the proof to
+Section~\ref{sec:app-gcounter-comm-assoc}:
 
 \begin{figure}[H]
-\input{figures/theories/delta-gset}
+  \input{figures/theories/gcounter-state-sec}
+  \caption{Isabelle proof that the state-based G-Counter \CRDT is \SEC.}
 \end{figure}
+
+Incidentally by this point, the proof that \SEC is inhabited by our encoding of
+the G-Counter \SEC is mostly automatic, up to giving Isabelle some hints about
+rewrite and simplification rules that it should apply.
 
 \TODO
 
-\section{Formalism}
-\section{Walk-through}
-\section{Results}
-\section{Alternative Network Specifications}
+\subsection{State-based GSet}
+
+Now that we have verified a state-based G-Counter \CRDT, we turn our attention
+to the other \CRDT object for study in this thesis. This will be the state-based
+G-Set, which is described in detail in Section~\ref{sec:example-gset}. Readers
+may notice that the remaining sections in this chapter are shorter and shorter
+as we build up and reuse techniques from earlier proofs in later ones.
+
+For now, we begin with an instantiation of the state-based G-Set \CRDT, as
+follows:
+
+\begin{figure}[H]
+  \input{figures/theories/gset-state}
+  \caption{Isabelle types for the state and operations of a state-based G-Set.}
+\end{figure}
+
+Like in Figure~\ref{fig:gset-state}, we parameterize the \CRDT on the type of
+element in the set, which we denote in Isabelle as $\isacharprime\isa{a}$.
+Similar to our offers in the previous sub-section, we define the
+$\isa{operation}$ type to be a type-level synonym for the $\isa{state}$ type,
+which we interpret in the same way (that is, that receiving an ``operation''
+from some other replica is equivalent to being told to merge our state with the
+received one, and replace our current state with the result).
+
+Next, we define a simple insertion operation:
+
+\begin{figure}[H]
+  \input{figures/theories/gset-state-op}
+  \caption{Isabelle definition of the insertion operation for a state-based
+    G-Set.}
+\end{figure}
+
+Again, we define an operation $\isa{insert}$ for demonstration
+purposes.\footnote{Again, our proofs reason about state \emph{transitions}.} Now
+that we have a convenience function for generating states that could be used to
+drive state transitions within the system, we can instate the interpretation of
+an operation at a state-based G-Set \CRDT. This is the second function in the
+above Isabelle snippet. Like the state-based G-Counter \CRDT, we map a pair of
+$\isacharprime\isa{a}~\isa{operation}$ and $\isacharprime\isa{a}~\isa{state}$ to
+a new state of the same type, or $\isa{None}$.\footnote{The existing library
+in~\citep{gomes17} requires that this function be a partial mapping, but we do
+not specify any behaviors which would cause our node to crash in ordinary
+execution here.}
+
+Faithful to the original specification in Figure~\ref{fig:gset-state}, we
+interpret the join of two states (that is, two sets of items, one per replica)
+as the merge operation.
+
+Because we are using Isabelle's $\isa{set}$ library and its built-in function
+$\cup$, we can leverage proofs about built-in Isabelle types, including the fact
+that $\cup$ is commutative, associative, and idempotent. Therefore, unlike our
+experience in the previous sub-section when specifying the state-based G-Counter
+\CRDT, we do not need to prove these facts ourselves.\footnote{Recall that in
+this instance, we were using a user-defined function
+$\isa{option}\isacharunderscore\isa{max}$, and had an expanded obligation to
+prove that this function was commutative and associative; Isabelle inferred
+idempotence automatically.}
+
+Aside from some additional proofs which are standard to all of our
+instantiations of \CRDTs using the library from~\citep{gomes17}, we can
+immediately instantiate the
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+locale without additional proof. We present the statement of this locale below,
+and leave it and the additional proofs about the state-based G-Set to
+Section~\ref{sec:app-state-gset}.
+
+\begin{figure}[H]
+  \input{figures/theories/gset-state-sec}
+  \caption{Isabelle instantiation of the
+    $\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
+    locale for the state-based G-Set.}
+\end{figure}
+
+\section{$\delta$-state based \CRDTs}
+We have reached the climax of this chapter in which we now set out to verify
+that $\delta$-state based \CRDT equivalents of the G-Counter and G-Set are also
+inhabitants of the \SEC locale.
+
+But in fact, we have already established this goal. Recall our statement in
+Maxim~\ref{maxim:delta-as-state} that all $\delta$-state \CRDTs are themselves
+$\delta$-state based \CRDTs, only with additional restriction on what states are
+sent to other replicas. All that suffices to show is that restricted executions
+of the datatype--that is, ones in which only $\delta$-state fragments are sent,
+and not full state--still inhabit the \SEC locale.
+
+This goal has already been established. To see why, consider our basic proof
+strategy which is to treat operations as state. Then, the difference between
+verifying a state- or $\delta$-state based \CRDT comes down to the kinds of
+operations that are sent. For concreteness, a state-based \CRDT operation
+incorporates its own local state (in addition to the update) in the operation.
+That is, the operation is a function of the state itself. However, the same is
+not true of $\delta$-state \CRDTs, where the operation is a pure function of the
+update (that is, it does not incorporate state or information that is local to
+the replica).
+
+So, the difference between the two proofs comes down to the definition of the
+operation. Since these operations are user-defined, we do not reason about them
+explicitly in our proofs, and instead consider all \emph{possible} operations
+that could be sent over the network from replica to replica. Note finally that
+the set of operations that could be generated by a $\delta$-state \CRDT is a
+strict subset of the set of operations that could be generated by a traditional
+state-based \CRDT. That is a $\delta$-state \CRDT update includes up to the same
+amount of information as a state-based \CRDT, but never more.
+
+Since we have verified our \CRDTs as inhabiting the \SEC locale over all
+possible operations, we produced proofs for $\delta$-state \CRDTs as a
+side-effect of our strategy in Maxims~\ref{maxim:state-as-op}
+and~\ref{maxim:delta-as-state}.
+
+We devote the remainder of this chapter to stating the types of the
+operation-producing functions for the $\delta$-based \CRDT equivalents of the
+G-Counter and G-Set.
+
+\subsection{$\delta$-state based G-Counter}
+
+We begin first with our full definition of the $\delta$-state based G-Counter
+\CRDT. Like the state-based variant, we treat the state as a partial mapping
+between a transparent node identifier type and an optional value, referring to
+the number of increment operations performed locally at that node. Following
+Maxim~\ref{maxim:state-as-op}, we treat the operation again as a type-level
+synonym for the state.
+
+The full definition in Isabelle is as follows \TODO[spacing]:
+
+\begin{figure}[H]
+  \input{figures/theories/delta-gcounter}
+  \caption{Isabelle definition of the $\delta$-state G-Counter \CRDT.}
+\end{figure}
+
+The only difference (besides renaming $\isa{gcounter}\isacharunderscore\isa{op}$
+to $\isa{delta}\isacharunderscore\isa{gcounter}\isacharunderscore\isa{op}$) is
+that: the function $\isa{update}$ does not ever return a value from the
+underlying state which does not belong to the replica being updated. That is, we
+return a state which is \emph{only} defined for the single replica being
+updated.
+
+All other proofs are the same. \TODO[need a little more here]
+
+\subsection{$\delta$-state based G-Set}
+
+Finally, we turn our attention to the remaining \CRDT instance: the G-Set.
+Similar to our experience verifying the $\delta$-based G-Counter, we reuse much
+of the\TODO[prose that we're reusing most of the original proofs]
+
+\begin{figure}[H]
+  \input{figures/theories/delta-gset}
+  \caption{Isabelle definition of the $\delta$-state G-Counter \CRDT.}
+\end{figure}
+
+\TODO[identify the difference in $\isa{insert}$]
+
+\section{Conclusion}
+
+\TODO
