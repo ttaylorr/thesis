@@ -8,7 +8,7 @@ type_synonym ('a) state = "'a set"
 type_synonym ('a) operation = "'a state"
 
 fun insert :: "'a \<Rightarrow> ('a state) \<Rightarrow> ('a operation)" where
-"insert a as = { a }"
+"insert a as = as \<union> { a }"
 
 fun gset_op :: "('a operation) \<Rightarrow> ('a state) \<rightharpoonup> ('a state)" where
 "gset_op a as = Some ( as \<union> a )"

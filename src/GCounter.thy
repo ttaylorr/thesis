@@ -1,4 +1,3 @@
-
 theory
   GCounter
 imports
@@ -13,16 +12,10 @@ fun option_max :: "int option \<Rightarrow> int option \<Rightarrow> int option"
 "option_max x None = x" |
 "option_max None y = y"
 
-fun update :: "'id state \<Rightarrow> 'id \<Rightarrow> (int \<Rightarrow> int) \<Rightarrow> ('id operation)" where
-  "update x i fn = (case (x i) of
-      None       \<Rightarrow> x(i := Some(fn 0))
-    | Some (x_i) \<Rightarrow> x(i := Some(fn x_i)))"
-
-fun inc :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)"  where
-"inc who st = update st who (\<lambda>x. x + 1)"
-
-fun dec :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)"  where
-"dec who st = update st who (\<lambda>x. x - 1)"
+fun inc :: "'id \<Rightarrow> ('id state) \<Rightarrow> ('id operation)" where
+"inc who st = (case (st who) of 
+    None \<Rightarrow> st(who := Some 0)
+  | Some c \<Rightarrow> st(who := Some (c + 1)))"
 
 fun gcounter_op :: "('id operation) \<Rightarrow> ('id state) \<rightharpoonup> ('id state)" where
 "gcounter_op theirs ours = Some (\<lambda> x. option_max (theirs x) (ours x))"
@@ -58,8 +51,9 @@ corollary (in gcounter) counter_convergence:
       and "xs prefix of i"
       and "ys prefix of j"
     shows "apply_operations xs = apply_operations ys"
-using assms by(auto simp add: apply_operations_def intro: hb.convergence_ext concurrent_operations_commute
-                node_deliver_messages_distinct hb_consistent_prefix)
+using assms by(auto simp add: apply_operations_def
+                       intro: hb.convergence_ext concurrent_operations_commute
+                              node_deliver_messages_distinct hb_consistent_prefix)
 
 context gcounter begin
 

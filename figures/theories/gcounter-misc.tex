@@ -1,0 +1,13 @@
+\begin{isabellebody}%
+\isacommand{fun}\isamarkupfalse%
+\ option{\isacharunderscore}max\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}int\ option\ {\isasymRightarrow}\ int\ option\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\ \ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}option{\isacharunderscore}max\ {\isacharparenleft}Some\ a{\isacharparenright}\ {\isacharparenleft}Some\ b{\isacharparenright}\ {\isacharequal}\ Some\ {\isacharparenleft}max\ a\ b{\isacharparenright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+{\isachardoublequoteopen}option{\isacharunderscore}max\ x\ None\ {\isacharequal}\ x{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+{\isachardoublequoteopen}option{\isacharunderscore}max\ None\ y\ {\isacharequal}\ y{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ \isanewline
+\ \ \ \ None\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isadigit{0}}{\isacharparenright}\isanewline
+\ \ {\isacharbar}\ Some\ c\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isacharparenleft}c\ {\isacharplus}\ {\isadigit{1}}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\end{isabellebody}

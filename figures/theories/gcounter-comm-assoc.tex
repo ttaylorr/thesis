@@ -1,0 +1,40 @@
+\begin{isabellebody}
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharparenleft}\isakeyword{in}\ gcounter{\isacharparenright}\ option{\isacharunderscore}max{\isacharunderscore}assoc{\isacharcolon}\isanewline
+\ \ {\isachardoublequoteopen}option{\isacharunderscore}max\ a\ {\isacharparenleft}option{\isacharunderscore}max\ b\ c{\isacharparenright}\ {\isacharequal}\ option{\isacharunderscore}max\ {\isacharparenleft}option{\isacharunderscore}max\ a\ b{\isacharparenright}\ c{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+\ {\isacharparenleft}induction\ a{\isacharsemicolon}\ induction\ b{\isacharsemicolon}\ induction\ c{\isacharparenright}\isanewline
+\ \ \isacommand{apply}\isamarkupfalse%
+\ {\isacharparenleft}auto{\isacharparenright}\isanewline
+\ \ \isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharparenleft}\isakeyword{in}\ gcounter{\isacharparenright}\ option{\isacharunderscore}max{\isacharunderscore}commut{\isacharcolon}\ {\isachardoublequoteopen}option{\isacharunderscore}max\ a\ b\ {\isacharequal}\ option{\isacharunderscore}max\ b\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+\ {\isacharparenleft}induction\ a{\isacharsemicolon}\ induction\ b{\isacharparenright}\isanewline
+\ \ \isacommand{apply}\isamarkupfalse%
+\ {\isacharparenleft}auto{\isacharparenright}\isanewline
+\ \ \isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+\end{isabellebody}

@@ -1,0 +1,9 @@
+\begin{isabellebody}
+\isacommand{fun}\isamarkupfalse%
+\ insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}a\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}insert\ a\ as\ {\isacharequal}\ {\isacharbraceleft}\ a\ {\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ gset{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}gset{\isacharunderscore}op\ a\ as\ {\isacharequal}\ Some\ {\isacharparenleft}\ as\ {\isasymunion}\ a\ {\isacharparenright}{\isachardoublequoteclose}
+\end{isabellebody}
