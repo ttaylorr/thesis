@@ -17,7 +17,7 @@ investigate and verify more instances of $\delta$-state CRDTs.
 One area of particular interest is in the \emph{composition} of multiple
 $\delta$-state CRDTs. We have begun investigating the instantiation of a $pair$
 locale, which takes as arguments two independent $\delta$-state \CRDTs, known as
-``left'' and ``right''. Our hope is that provided existing instantiations of
+``left'' and ``right.'' Our hope is that provided existing instantiations of
 both of the sub-\CRDTs, that a $pair$ locale given two already-verified \CRDTs
 could be used without additional proof burden to create another instance of the
 $network{\isacharunderscore}with{\isacharunderscore}ops$ locale. That is: can
@@ -70,7 +70,7 @@ obtain the PN-Counter and 2P-Set immediately.
 \label{sec:direct-delta-proofs}
 
 To explore this idea, we drew significant inspiration from the work of Almedia
-and his co-authors in~\citep{almedia18} to restate $\delta$-state \CRDTs in
+and his co-authors in~\citet{almedia18} to restate $\delta$-state \CRDTs in
 terms of op-based \CRDTs in an effort to reuse as much of their library as
 possible.
 
@@ -150,7 +150,7 @@ $r_1$ and $r_2$ (both of which are behaving correctly), that update is
 A critical issue in the above example is that $r_2$ merges the update from $r_1$
 immediately--thus placing the update in that node's history--without knowing
 whether or not it has been received by $r_3$. An anti-entropy algorithm like
-in~\citep{almedia18} addresses these problems. The goal of an anti-entropy
+in~\citet{almedia18} addresses these problems. The goal of an anti-entropy
 algorithm for $\delta$-state \CRDTs is to do the following:
 \begin{enumerate}
   \item On an operation, generate the $\delta$-mutation, and apply it to both
@@ -184,7 +184,7 @@ require a \emph{causal merging condition} in order to ensure causal consistency
 whereas in op-based \CRDTs this is traditionally an assumption placed on
 $P$~\citep{shapiro11}.
 
-The authors of~\citep{almedia18} define a \emph{$\delta$-interval}
+The authors of~\citet{almedia18} define a \emph{$\delta$-interval}
 $\Delta^{a,b}_i$ as:
 \[
   \Delta^{a,b}_i = \bigsqcup \left\{ d_i^k : k \in [a, b) \right\}
@@ -205,10 +205,10 @@ been proven on paper to satisfy Causal Consistency (\CC) in addition to \SEC. To
 our knowledge, this result has not been mechanized, and so we believe it would
 be a worthwhile direction of future research to specify the causal merging
 condition and associated anti-entropy algorithms which preserve it into an
-interactive theorem prover and mechanize the results of~\citep{almedia18}.
+interactive theorem prover and mechanize the results of~\citet{almedia18}.
 
 If the above is the subject of further exploration, we believe that it would be
 additionally possible to prove that $\delta$-state \CRDTs achieve \SEC by a
 \emph{simulation proof} that establishes their correspondence with state-based
-\CRDTs. This is mentioned as Proposition 3 in~\citep{almedia18}, but we believe
+\CRDTs. This is mentioned as Proposition 3 in~\citet{almedia18}, but we believe
 that this is another fruitful area for formal verification.

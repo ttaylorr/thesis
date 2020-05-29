@@ -17,7 +17,7 @@ Specifically, we will discuss the following:
 
 In this section, we will identify and discuss the two key intuitions which guide
 the remainder of our proof strategy. We'll refer to these intuitions as
-``maxims''. They are stated here in brief, but we will return to them in
+``maxims.'' They are stated here in brief, but we will return to them in
 Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-state}.
 
 \begin{maxim}
@@ -57,7 +57,7 @@ follows:
 For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
 between state- and op-based \CRDTs. If we had such a structure-preserving
 transformation, then we would be able to verify any state-based \CRDT of our
-choosing using the framework from Gomes et. al. Without modification to the
+choosing using the framework from~\citet{gomes17} without modification to the
 framework. Then, the process for verifying a state-based \CRDT using the
 op-based framework looks as follows:
 \begin{enumerate}
@@ -78,6 +78,7 @@ to.} To understand $\phi$, we'll consider how it maps the state $S$ (along with
 $s^0$ and $q$) separately from how it maps the update procedure $u$.
 
 \subsection{Mapping states under $\phi$}
+
 Let us begin our discussion with a consideration to how $\phi$ maps the state
 $S$ from a state-based \CRDT to an op-based one. In practice, it would be
 unrealistic to treat the state space of a state-based \CRDT as equal to that of
@@ -86,46 +87,16 @@ op-based \CRDTs over state-based ones, which is that they are often able to
 represent the same set of query-able states using simpler structures. For
 example, state-based counters (such as the $\textsf{G-Counter}_s$ and
 $\textsf{PN-Counter}_s$) often use a vector representation to represent the
-number of ``increment'' operations at each node. In this case, the query
-function is often represented as:
-\[
-  q = \lambda s.\, \sum_{i \in \mathcal{I}} s[i]
-\]
-where $S = \mathbb{N}^{|\mathcal{I}|}_+$, and $s_0$ is the all-zeros vector.
-This representation accommodates a relatively weak set of delivery semantics
-including dropping, reordering, and duplication of messages.\footnote{This
-representation is also resilient to reordering of messages (though this
-restriction causes causal inconsistencies with respect to the state), but this
-is uninteresting for the example at hand.} Because the counted values are
-non-decreasing (that is, $S$ is a lattice), we have that:
-\begin{itemize}
-  \item Dropped updates are eventually propagated through nodes that \emph{do}
-    receive them and join them locally (thus propagating them out further from
-    their own state), or else not considered at all since no nodes have received
-    them (in which case the preconditions for Strong Eventual Consistency are
-    not met).
-  \item Delayed and reordered updates are resolved identically no matter in what
-    order they are received because the pair-wise maximum of two vectors is
-    commutative.
-  \item Duplicated messages are resolved idempotently.
-\end{itemize}
-Since the vector has an entry for each participant in the system, it grows
-as a linear function of the number of participants overall. Scaling linearly in
-this fashion is indicative of a ``large'' state representation.\footnote{Partly
-because \CRDTs are often composed with one another, e.g., as in the PN-Counter,
-and so this linear factor contributes to \emph{each} of the composed \CRDTs,
-increasing the size of the overall \CRDT even more.} Compare this to an op-based
-representation of the same object (i.e., $\textsf{G-Counter}_o$), which can
-represent its state using only $S = \mathbb{N}_+$, since updates are guaranteed
-to be delivered at most once (duplicating messages would cause states to appear
-which do not correspond to the number of times an update was performed in
-actuality, because the duplicate delivery would be indistinguishable from the
-case where two updates were performed).
+number of ``increment'' operations at each node, but op-based counters often
+instead use scalars (c.f., the examples in
+Section~\label{sec:example-gcounter}).
 
-So, for remainder of this chapter, we treat $\phi$ as preserving the state
-space, and initial state under mapping. Since the query function $q$ is defined
-in terms of the state-space, $S$, we let $\phi$ preserve the implementation of
-$q$ under the mapping, too.
+In order to make $\phi$ a simple reduction, we allow the state spaces of the
+\CRDT before and after the reduction to be identical. Though \CRDT designers can
+often be more clever than this in practice, this makes reasoning about the
+transformation much simpler for the purposes of our proofs.  Likewise, Since the
+query function $q$ is defined in terms of the state-space, $S$, we let $\phi$
+preserve the implementation of $q$ under the mapping, too.
 
 \subsection{Mapping updates under $\phi$}
 Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
@@ -147,7 +118,7 @@ mechanized):
   then, $C_o$ and $C_s$ reach equivalent states given equivalent updates and
   delivery semantics.
 \end{theorem}
-\begin{proof}
+\begin{proof}[Proof sketch]
 By simulation. Since $s^0_o = s^0$, both objects begin in the same state. Since
 $q_o = q$, if the state of $C_o$ and $C_s$ are equal, then $q_o$ will reflect as
 much. Finally, and update is prepared locally by computing the updated
@@ -218,14 +189,3 @@ $\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
   \item Reason about the resulting op-based \CRDT using the existing framework
     and implementation.
 \end{enumerate}
-
-\section{Conclusion}
-In this brief chapter, we outline a key strategy for the mechanized proofs
-presented in Chapter~\ref{chap:example-crdts}. In particular, we identify two
-important reductions: that state-based \CRDTs can be encoded as op-based \CRDTs
-(Maxim~\ref{maxim:state-as-op}) and that $\delta$-state \CRDTs are restricted
-forms of state-based \CRDTs (Maxim~\ref{maxim:delta-as-state}).
-
-We presented a non-mechanized proof of Maxim~\ref{maxim:state-as-op}, and
-conducted an informal argument of Maxim~\ref{maxim:delta-as-state}. To our
-knowledge, this is the first time that these reductions have been identified.

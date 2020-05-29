@@ -1,16 +1,18 @@
 \chapter{Example \CRDTs under Weak Network Model}
 \label{chap:example-crdts}
 
-In this chapter, we discuss our efforts mechanizing proofs that two state- and
-$\delta$-state based \CRDTs achieve \SEC.  We discuss our efforts to weaken the
-underlying network model to support non-unique messages, and then show that both
-the state- and $\delta$-state based G-Counter and G-Set inhabit \SEC. Finally,
-we discuss an alternative encoding of the reduction in
-Chapter~\ref{chap:crdt-reductions} for $\delta$-state \CRDTs.
+We have mechanized proofs that two state- and $\delta$-state based \CRDTs
+achieve \SEC. We weakened the underlying network model to
+support non-unique messages (Section~\ref{sec:network-relaxations}), and then
+showed that both the state- and $\delta$-state based G-Counter and G-Set inhabit
+\SEC (Sections~\ref{sec:isabelle-state-crdts}
+and~\ref{sec:isabelle-delta-crdts}). Finally, we present an alternative encoding
+of the reduction in Chapter~\ref{chap:crdt-reductions} for $\delta$-state
+\CRDTs (Section~\ref{sec:alternate-delta-encoding}).
 
 \section{Network Relaxations}
 \label{sec:network-relaxations}
-In~\citep{gomes17}, Gomes and his co-authors provided a network model which
+In~\citet{gomes17}, Gomes and his co-authors provided a network model which
 makes the following set of assumptions:
 \begin{enumerate}
   \item All messages received by some node were broadcast by some other node.
@@ -27,13 +29,16 @@ allowed to reason about. For example, a network execution which drops all
 messages in transit, or does not preserve causality cannot be shown to exhibit
 \SEC, and so it is not a member of the relation $P$.  Such an assumption is
 standard in the literature and goes back to the original work
-in~\citep{shapiro11}.
+in~\citet{shapiro11}.
 
-In~\citep{gomes17}, the authors specify that the following assumptions must be
-met in order to instantiate their
-$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
-locale--for our purposes we can think of this as the set of preconditions on the
-relation $P$:
+In~\citet{gomes17}, the authors make extensive use of Isabelle's \emph{locale}
+feature~\citep{wenzel02}, which for our purposes we can consider as Isabelle's
+implementation of parametric proofs. Specifically, \citet{gomes17} define a
+locale for \SEC, which they call
+$\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$.
+To instantiate this locale, \CRDT replicas must meet the following
+preconditions:
+
 \begin{itemize}
   \item Messages which have a causal dependence are delivered in-order;
     concurrent messages may be delivered in any order (i.e., the $\prec$
@@ -50,7 +55,7 @@ relation $P$:
 
 While we consider the above to be a reasonable delivery semantics, we wish to
 strengthen the network model in order to support duplicated messages. This
-behavior is not permitted by the original network model in~\citep{gomes17},
+behavior is not permitted by the original network model in~\citet{gomes17},
 which assumes that each message in transit on the network has a unique
 identifier.
 
@@ -73,7 +78,7 @@ To see this, consider the following example:
 
   Notice that $q(r_2)$ results in a different value based on whether or not you
   queried the replica belonging to system $A$ or system $B$. In system $A$, the
-  duplicate message is ``ignored'', since merging the same message twice is
+  duplicate message is ``ignored,'' since merging the same message twice is
   idempotent due to $\sqcup$, and $q(r_2) = 1$ as expected. In system $B$, the
   additional update \emph{is} applied, meaning that $q(r_2) = 2$, which is a
   safety violation.
@@ -87,7 +92,7 @@ degenerate behaviors.
 
 The general principle is as follows:
 \begin{theorem} \label{thm:state-sec-dup}
-  State-based \CRDTs exhibit strong eventual consistency even when operating in
+  State-based \CRDTs exhibit \SEC even when operating in
   a network environment permitting non-unique messages.
 \end{theorem}
 \begin{proof}
@@ -105,12 +110,12 @@ The general principle is as follows:
 
 This result guides our approach as follows: to show a stronger result that uses
 Theorem~\ref{thm:state-sec-dup} (i.e., that state- and $\delta$-state based
-\CRDTs achieve strong eventual consistency no matter how many times), the network
-model originally presented in~\citep{gomes17} should be extended to remove the
-assumption that message identifiers are unique.
+\CRDTs achieve \SEC no matter how many times), the network model originally
+presented in~\citet{gomes17} should be extended to remove the assumption that
+message identifiers are unique.
 
 \subsection{Delivery Semantics}
-In their original network model, the authors of~\citep{gomes17} use an Isabelle
+In their original network model, the authors of~\citet{gomes17} use an Isabelle
 \textit{locale} in order to parameterize varying instantiations of the network
 based on certain assumptions. They provide the following definition for the
 Network locale~\citep{gomes17}:
@@ -129,7 +134,7 @@ Network locale~\citep{gomes17}:
 \end{isabelle}
 \centering
 \caption{Isabelle specification of the Network locale as given
-  in~\citep{gomes17}.}
+  in~\citet{gomes17}.}
 \end{figure}
 
 In order to extend the network model of Gomes et. al. to support duplicated
@@ -192,7 +197,7 @@ $\isa{hb}\isacharunderscore\isa{broadcast}\isacharunderscore\isa{broadcast}\isac
 After removing the
 $\isa{msg}\isacharunderscore\isa{id}\isacharunderscore\isa{unique}$ assumption,
 each of the above four proofs were able to be repaired automatically by
-Isabelle's proof search keyword $\isakeyword{sledgehammer}$~\citep{wenzel02}.
+Isabelle's proof search procedure $\isakeyword{sledgehammer}$~\citep{wenzel02}.
 
 In each of the \CRDTs that we do verify, we are required to instantiate a lemma
 stating:
@@ -203,7 +208,7 @@ stating:
 where $\isa{xs}$ and $\isa{ys}$ are lists of messages delivered to a pair of
 replicas by the network. In other words, no matter what messages are delivered
 in what order, the two replicas attain the same state. Following the original
-proofs provided for op-based \CRDTs in~\citep{gomes17}, our proofs of this lemma
+proofs provided for op-based \CRDTs in~\citet{gomes17}, our proofs of this lemma
 make the standard assumption that:
 \[
   \isakeyword{set}~(\isa{node}\isacharunderscore\isa{deliver}\isacharunderscore\isa{messages}~\isa{xs})~\isacharequal~
@@ -227,6 +232,8 @@ delivered at least once at both. This allows us to exercise the latter case of
 Example~\ref{example:state-op-dup-msgs} using the strengthened network model.
 
 \section{State-based \CRDTs}
+\label{sec:isabelle-state-crdts}
+
 Equipped with a relaxed network model, we are now ready to verify two examples
 of state-based \CRDTs.
 
@@ -301,8 +308,8 @@ definition as used in our proofs:
 
 Here, we specify a function that produces a partial mapping from an operation
 and state to a new state. The function is not total (that is, it \emph{can}
-return $\isa{None}$ for some input) to indicate a crash. For our purposes, the
-function \emph{is} total, that is, it never returns $\isa{None}$ for any
+return $\isa{None}$ for some input) to indicate a crash. For our purposes, we do
+not specify such a case, and so the function always returns $\isa{Some}$ for any
 input.\footnote{Note that this $\isa{None}$ is different from the partial
 mapping of the $\isacharprime\isa{id}~\isa{state}$ type, which specifies that
 the \emph{count} of increment operations at some replicas may zero. Returning
@@ -365,7 +372,7 @@ state an important lemma and corollary, which are as follows:
   \caption{Isabelle proofs that the state-based G-Counter is convergent.}
 \end{figure}
 
-This and the above proof establish the following two facts:
+This and the above proof establish the following two lemmas:
 \begin{itemize}
   \item Operations that have been delivered at some node can be applied in any
     order up to causality and still achieve the same state (there is a more
@@ -441,7 +448,7 @@ an operation at a state-based G-Set \CRDT. This is the second function in the
 above Isabelle snippet. Like the state-based G-Counter \CRDT, we map a pair of
 $\isacharprime\isa{a}~\isa{operation}$ and $\isacharprime\isa{a}~\isa{state}$ to
 a new state of the same type, or $\isa{None}$.\footnote{The existing library
-in~\citep{gomes17} requires that this function be a partial mapping, but we do
+in~\citet{gomes17} requires that this function be a partial mapping, but we do
 not specify any behaviors which would cause our node to crash in ordinary
 execution here.}
 
@@ -460,7 +467,7 @@ prove that this function was commutative and associative; Isabelle inferred
 idempotence automatically.}
 
 Aside from some additional proofs which are standard to all of our
-instantiations of \CRDTs using the library from~\citep{gomes17}, we can
+instantiations of \CRDTs using the library from~\citet{gomes17}, we can
 immediately instantiate the
 $\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
 locale without additional proof. We present the statement of this locale below,
@@ -481,12 +488,12 @@ We have reached the climax of this chapter in which we now set out to verify
 that $\delta$-state based \CRDT equivalents of the G-Counter and G-Set are also
 inhabitants of the \SEC locale.
 
-But in fact, we have already established this goal. Recall our statement in
-Maxim~\ref{maxim:delta-as-state} that all $\delta$-state \CRDTs are themselves
-$\delta$-state based \CRDTs, only with additional restriction on what states are
-sent to other replicas. All that suffices to show is that restricted executions
-of the datatype--that is, ones in which only $\delta$-state fragments are sent,
-and not full state--still inhabit the \SEC locale.
+This follows simply from construction and our reductions. Recall our statement
+in Maxim~\ref{maxim:delta-as-state} that all $\delta$-state \CRDTs are
+themselves $\delta$-state based \CRDTs, only with additional restriction on what
+states are sent to other replicas. All that suffices to show is that restricted
+executions of the datatype--that is, ones in which only $\delta$-state fragments
+are sent, and not full state--still inhabit the \SEC locale.
 
 Recall that, since our proofs reason about state transitions inductively, we
 have implicitly covered the case in which only $\delta$-fragments of state are

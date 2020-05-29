@@ -2,9 +2,9 @@
 \ProvidesClass{thesis}
 
 \ifdefined\forprint
-  \LoadClass[12pt,twoside,openright,draft,letterpaper]{report}
+  \LoadClass[12pt,twoside,openright,letterpaper]{report}
 \else
-  \LoadClass[12pt,openright,draft,a4paper]{report}
+  \LoadClass[12pt,openright,a4paper]{report}
 \fi
 
 \RequirePackage[dottedtoc=true]{classicthesis}
@@ -48,7 +48,7 @@
 \newcommand*{\supervisor}[1]{\gdef\@supervisor{#1}}
 
 \bibliographystyle{abbrvnat}
-\setcitestyle{numbers}
+\setcitestyle{authoryear}
 
 \newtheorem{definition}{Definition}[chapter]
 \newtheorem{theorem}{Theorem}[chapter]

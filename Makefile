@@ -5,6 +5,7 @@ SECTIONS += abstract.tex
 SECTIONS += acknowledgements.tex
 SECTIONS += background.tex
 SECTIONS += conclusion.tex
+SECTIONS += crdt-instantiations.tex
 SECTIONS += crdt-reductions.tex
 SECTIONS += dedication.tex
 SECTIONS += example-crdts.tex

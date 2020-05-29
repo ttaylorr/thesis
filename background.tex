@@ -13,25 +13,25 @@ consistency are appealing in certain situations.
 Conflict-free Replicated Datatypes (\CRDTs) are a way to store several copies of
 a data-structure on multiple computers which form a distributed system. Each
 participant in the system can make modifications to the datatype without
-the need for explicit coordination with other participants. Their
+the need for explicit coordination with other participants. \CRDT
 implementations are designed so that coordination-free updates which may
 conflict with one another always have a deterministic resolution. This allows
 multiple participants to query and modify their \emph{view} of the replicated
 datatype, without the traditional overhead and implementation burden that more
 stringent replication algorithms require.
 
-Here, we'll discuss four variants of \CRDTs: state-based, op-based, pure
-op-based, and $\delta$-state based. Each of these variants achieve a consistent
-value by the use of different message types, and each likewise requires a
-different set of delivery semantics. In this chapter, we identify $\delta$-state
-\CRDTs as achieving an appealing set of trade-offs among each of the four
-variants. We restate that they are able to achieve Strong Eventual Consistency
-(the best reasonably-achievable consistency guarantee for most \CRDT
-applications) while maintaining both:
+Here, we'll discuss three variants of \CRDTs: state-based, op-based , and
+$\delta$-state based. Each of these variants achieve a consistent value by the
+use of different message types, and each likewise requires a different set of
+delivery semantics. In this chapter, we identify $\delta$-state \CRDTs as
+achieving an appealing set of trade-offs among each of the four variants. We
+restate that they are able to achieve Strong Eventual Consistency (\SEC, the
+best reasonably-achievable consistency guarantee for most \CRDT applications)
+while maintaining both:
 \begin{itemize}
   \item A relatively small payload size, as is the benefit of op-based \CRDTs,
     and
-  \item Relatively weak delivery semantics, as is the benefit of stat-based
+  \item Relatively weak delivery semantics, as is the benefit of state-based
     \CRDTs.
 \end{itemize}
 
@@ -98,56 +98,26 @@ distributed consensus:
 We summarize the two most popular and often-implemented algorithms for
 distributed consensus~\citep{howard20}:
 
-\paragraph{Paxos}
-The most popular algorithm in this field is Paxos~\citep{lamport98}. Broadly
-speaking, values (corresponding to changing the value of a replicated piece of
-data) are \textit{proposed}, \textit{accepted}, and \textit{learned} by
-participants in the system. This process is coordinated by an elected
-\textit{leader}, which is responsible for communicating with other participants
-in order to drive the process forward. When a leader becomes unresponsive, other
-participants in the system begin an election process to replace the leader, and
-do so when a majority of participants (and the new leader) acknowledge the
-change. In practice, \emph{multi-round} Paxos--that is, a repeated instantiation
-of \emph{single-decree} Paxos--takes the place of a ``log'' of agreed-upon
-events.
+The two most popular algorithms in this field are Paxos and
+Raft~\citep{howard20,lamport98,ongaro14}. Both algorithms implement a
+distributed state-machine replication and can be used to implement linearizable
+systems. Both of these systems are notoriously difficult to implement correctly
+in practice~\citep{howard20}. The topics often appear in undergraduate-level
+courses in Distributed Systems, and have been the subject of extensive
+verification effort to date~\citep{wilcox15}. Often, these distributed systems
+verification efforts require an enormous amount of effort.  In a companion
+paper~\citet{woos16} uses 45,000 lines to verify the complete Raft protocol in
+their system.
 
-\paragraph{Raft}
-Lest we omit another often-implemented consensus algorithm, we briefly discuss
-the Raft consensus algorithm as well~\citep{ongaro14}. Raft emphasizes
-understandability in its design, and ``separates the key elements of consensus''
-by silo-ing replication, leader election, and safety into different sub-problems
-at the design level. An execution of Raft consists of several \textit{terms}. To
-begin each term, an election is held in order to determine a \textit{leader}.
-Once elected, the leader is responsible for disseminating updates to each
-replicas copy of the \textit{log}. Conflicting log entries are always resolved
-in favor of the leader's copy. Finally, Raft enforces safety by imposing
-additional restrictions on the behavior of a term such that the log replication
-strategy is proven to be safe. This is argued in~\citep{ongaro14} and
-mechanically verified in~\citep{wilcox15}.
+It is natural to ask what is the property of these systems that makes them
+difficult to implement or reason about correctly in practice. One possible
+answer is to look at the stringent safety requirements (that is, that once a
+value has been decided, no other value(s) will be decided) in these algorithms.
 
-\subsection{Safety in Distributed Consensus Algorithms}
-\label{sec:dca-safety}
-
-\sloppy
-Both Raft and Paxos are notoriously difficult to implement correctly in
-practice~\citep{howard20}. Distributed consensus algorithms are often the
-subject of undergraduate-level courses in networks and distributed systems.
-Often, commercially-available implementations of these algorithms are built into
-off the shelf solutions~\citep{etcd,zookeeper}.
-
-Therefore, it is a natural question to ask why these algorithms are so
-notoriously difficult to implement in practice. Individually, the properties in
-Definition~\ref{def:consensus} seem reasonably in their own right. We propose
-that it is the safety property (that once a value has been decided, no other
-values will be decided) that makes implementing these algorithms correctly so
-difficult in practice. In essence, coordinating the proposals individual
-participants submit is the central difficulty of these algorithms.
-
-Conflict-free Replicated Datatypes (\CRDTs) are a natural answer to this
-question. By allowing participants to temporarily diverge from the state of the
-overall computation (c.f., the second property of
+\CRDTs are a natural response to this. By allowing participants to temporarily
+diverge from the state of the overall computation (c.f., the second property of
 Definition~\ref{def:eventual-consistency}), \CRDTs allow replicas to violate the
-safety property of Definition~\ref{def:consensus}. By giving up the immediacy
+safety property of Definition~\ref{def:consensus}.  By giving up the immediacy
 and permanence that the safety properties of a traditional distributed consensus
 algorithm, \CRDTs allow for a dramatically lower implementation burden in
 practice, and are substantially easier to reason about.
@@ -177,13 +147,13 @@ they have and have not yet received--which makes \SEC an appealing consistency
 property for distributed systems which more relaxed requirements than would be
 satisfied by a linearizable system.
 
-We discuss each of these consistency classes in turn:
+We discuss each of these consistency classes in turn.
 
 \subsection{Eventual Consistency}
-Eventual consistency captures the informal guarantee that if all clients stop
-submitting updates to the system, all replicas in the system eventually reach
-the same value~\citep{shapiro11}. More formally, \EC requires the following
-three properties~\citep{shapiro11}:
+\EC captures the informal guarantee that if all clients stop submitting updates
+to the system, all replicas in the system eventually reach the same
+value~\citep{shapiro11}. More formally, \EC requires the following three
+properties~\citep{shapiro11}:
 \begin{enumerate}
   \item \emph{Eventual delivery}. An update delivered at some correct replica is
     eventually delivered at all replicas.
@@ -200,7 +170,7 @@ three properties~\citep{shapiro11}:
   \item \emph{Termination}. All method executions terminate.
 \end{enumerate}
 
-\EC is a relatively weak form of consistency. In~\citep{shapiro11}, it is
+\EC is a relatively weak form of consistency. In~\citet{shapiro11}, it is
 observed that \EC systems will execute an update immediately only to discover
 that it produces a conflict with some future update, and so a roll-back is
 performed. This imposes an additional constraint, which is that replicas need
@@ -214,7 +184,7 @@ too much of the underlying network, and so it can make it difficult to reason
 about strong consistency guarantees over an unreliable network.
 
 Take for an example a network which never delivers any messages. In this case,
-the precondition for eventual delivery is not met, and so we are received of the
+the precondition for eventual delivery is not met, and so we are relieved of the
 obligation to prove that updates are propagated to other replicas, since they
 aren't delivered anywhere in the first place. However, consider a network which
 delivers only the \emph{first} message sent on it, and then drops all other
@@ -265,8 +235,8 @@ from \EC. On top of \EC, strong convergence is only a moderate safety
 restriction. In particular, it imposes no requirements on replicas which have
 not received the same sequence or even set of updates. So, unlike strong
 distributed consensus algorithms like Paxos or Raft which are fully
-linearisable~\citep{lamport98,ongaro14}, \SEC allows certain replicas to be
-``behind''. That is, a replica which hasn't yet received all relevant updates in
+linearizable~\citep{lamport98,ongaro14}, \SEC allows certain replicas to be
+``behind.'' That is, a replica which hasn't yet received all relevant updates in
 the system is allowed to return an earlier version of the computation.
 
 Informally, this means that replicas in the system are allowed to temporarily
@@ -278,16 +248,16 @@ are sent to the system, property (1) of \EC requires that all replicas will
 \label{sec:state-based-crdts}
 
 Now that we have discussed \EC and \SEC, we will turn our attention to datatypes
-that implement these consistency models.  \CRDTs are a common way to implement
+that implement these consistency models. \CRDTs are a common way to implement
 the consistency requirements in \SEC. So, we begin with a discussion of
-state-based \CRDTs from their inception in~\citep{shapiro11}. A state-based
+state-based \CRDTs from their inception in~\citet{shapiro11}. A state-based
 \CRDT is a 5-tuple $(S, s^0, q, u, m)$. An individual replica of a state-based
 \CRDT is at some state $s^i \in S$ for $i \ge 0$, and is initially $s^0$. The
 value may be queried by any client or other replica by invoking $q$. It may be
 updated with $u$, which has a unique type per \CRDT object. Finally, $m$ merges
 the state of some other remote replica.  Neither $q$ nor $u$ have pre-determined
 types, per-se, rather they are implementation specific. We discuss a portfolio
-of examples to illustrate this point in Section~\ref{sec:crdt-portfolio}.
+of examples to illustrate this point in Chapter~\ref{chap:crdt-instantiations}.
 
 Crucially, the states of a given state-based \CRDT form a partially-ordered set
 $\langle S, \sqsubseteq \rangle$. This poset is used to form a join
@@ -450,38 +420,10 @@ They claim that having commutativity for concurrent operations as well as an
 in-order delivery relation $P$ for comparable updates is sufficient to prove
 that op-based \CRDTs achieve Strong Eventual Consistency.
 
-\subsection{Pure op-based \CRDTs}
-
-For completeness, we briefly discuss the work of Baquero and his co-authors in
-developing \emph{pure} op-based \CRDTs~\citep{baquero17}. Although we devote some
-time to their discussion, we do not investigate pure op-based \CRDTs further in
-this thesis. Pure op-based \CRDTs address a highly-interpretable definition of
-$t$ and $u$ to restrict the payload size of the messages that these operations
-generate and require, respectively. In particular, they point out that op-based
-\CRDTs may behave as if they were state-based \CRDTs when $t$ encodes the state
-$s^k$ and $u$ acts like a full join on the lattice $S$.
-
-A particular advantage of op-based \CRDTs over their state-based counter-parts is
-that they are generally believed to require less overall bandwidth to
-communicate updates. The key trade-off is that op-based \CRDTs require a much
-stronger delivery semantics $P$ (in particular, $P$ must provide in-order and
-at-most-once delivery of messages) in order to attain Strong Eventual
-Consistency. Of course, treating an op-based \CRDT as a state-based one
-eliminates many of these benefits.
-
-To address this issue, Baquero and his co-authors instead treat the state-space
-$S$ of a \emph{pure} op-based \CRDT as a poset of
-operations\footnote{Incomparable items are generally interpreted as concurrent
-operations performed on a pure op-based \CRDT}, where the state is interpreted as
-applying elements in the poset order. They couple this with the additional
-restriction that $(t,u)$ can only send operations to other replicas, meaning
-that, for instance, they cannot send the entire state of a replica to all other
-replicas.
-
 \section{$\delta$-state \CRDTs}
 In this section, we describe the refinement of \CRDTs that is the interest and
 focus of the body of this thesis. That is the $\delta$-state \CRDT, as described
-in~\citep{almedia18}. In their original work, Almeida and his co-authors
+in~\citet{almedia18}. In their original work, Almeida and his co-authors
 describe $\delta$-state \CRDTs as:
 \begin{quote}
 ...ship[ping] a \textit{representation of the effect} of recent update operations
@@ -531,337 +473,3 @@ Said otherwise, $\delta$-state \CRDTs have the relative strengths of both state-
 and op-based \CRDTs without their respective drawbacks. This makes them an area
 of interest, and they are the subject to which we dedicate the remainder of this
 thesis.
-
-\section{Elementary \CRDT instantiations}
-\label{sec:crdt-portfolio}
-In this section, we provide the specification of three common \CRDT instantiations
-for three of the four aforementioned \CRDT refinements. In particular, we show
-instantiations of the Grow-Only Counter (G-Counter), Positive-Negative Counter
-(PN-Counter), and the Grow-Only Set (G-Set) for state-, op-, and
-$\delta$-state-based \CRDTs. In each of the below, we assume that $\mathcal{I}$
-refers to the set of node identifiers corresponding to the active
-replicas.\footnote{In this thesis, we consider $\mathcal{I}$ to be fixed during
-execution; that is, we do not support addition or deletion of replicas.}
-
-\subsection{Example: Grow-Only Counter}
-\label{sec:example-gcounter}
-
-\paragraph{State-based G-Counter}
-The G-Counter supports two very simple operations: \textsf{inc}, and query. When
-\textsf{inc} is invoked, the counter updates its internal state to increment the
-queried value by one. When query is invoked, the counter returns a number which
-is at least as large as the number of times that \textsf{inc} has been invoked
-\textit{at that replica}.
-
-This is our first example of \SEC, where replicas that are ``behind'', i.e.,
-that have not received all updates from all other replicas, are not guaranteed
-to reflect the same value upon being queried.\footnote{Perhaps these messages
-were delayed or dropped in transit, or otherwise the other replicas have not
-broadcast their updates yet. The latter is uncommon in traditional state-based
-\CRDTs, but is an often-used operation in variants of state-based \CRDTs
-(including $\delta$-state \CRDTs) where updates are bundled into
-\emph{intervals} which are sent in a way that preserves causality of updates.}
-Concretely, suppose that an \textsf{inc} has occurred at at least one other
-replica which has not yet broadcast its updated state. The replica being queried
-will have therefore not yet merged the updated state from the replica(s)
-receiving \textsf{inc},\footnote{Because we cannot merge updates we do not know
-about.} and so those update(s) will not be reflected in the value returned by
-querying.
-
-We present a state-based G-Counter \CRDT for concreteness, and then discuss its
-definition:
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Counter}_s = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
-      s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
-      q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
-      u &: \lambda s,i. s\left\{ i \mapsto s(i) + 1 \right\} \\
-      m &: \lambda s_1, s_2. \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
-      \mathsf{dom}(s_2) \right\}
-    \end{aligned}\right.
-  \]
-  \caption{Specification of a state-based \textsf{G-Counter} \CRDT.}
-  \label{fig:state-gcounter}
-\end{figure}
-
-Notice that the state space $\mathbb{N}^{|\mathcal{I}|}_+$ does not match the
-return type of the query function, $q$, which is simply $\mathbb{N}_+$. One way
-to understand this is to consider what might happen to certain interleavings of
-updates using this state-space. Consider the following example:
-
-\begin{example}
-  \label{example:vector-state-counter}
-  Suppose we have two replicas, $r_1$ and $r_2$, and consider the following
-  sequence of events:
-
-  \begin{figure}[H]
-    \centering
-    \includegraphics[width=.5\textwidth]{figures/scalar-state.pdf}
-    \caption{An (invalid) execution of scalar-based state G-Counters exchanging
-      updates.}
-  \end{figure}
-
-  \begin{enumerate}
-    \item Initially, $q(r_1) = q(r_2) = 0$. Suppose next that one update is
-      issued at each replica concurrently. That is, at the same time, we run
-      both $u(r_1)$ and $u(r_2)$ so that $q(r_1) = q(r_2) = 1$.
-    \item Then, each replica sends its state to the other where it is joined
-      with the current state. Here, $r_1$ tells $r_2$ that its state is $1$,
-      which $r_2$ joins with its own state, also $1$.
-  \end{enumerate}
-
-  Since $\sqcup$ is idemopotent, the state at both replicas remains $1$ until
-  further updates are issued. This does not reflect the overall state: without
-  further updates, $q(r_1)$ which equals $q(r_2)$ should equal $2$, not $1$.
-\end{example}
-
-Example~\ref{example:vector-state-counter} demonstrates the need for a
-vector-based counter, or, at least the need for a non-scalar value. In
-Figure~\ref{fig:state-gcounter}, we utilize a \emph{vector} counter, which
-should be familiar to readers acquainted with \emph{vector
-clocks}~\citep{lamport78}.\footnote{Unlike traditional vector clocks, the vector
-\emph{counter} only stores in each replica's slot the number of \textsf{inc}
-operations performed \emph{at that replica}.} The state-based G-Counter maintains
-a vector of natural numbers, where each element in the vector corresponds to the
-number of \textsf{inc} operations applied at that replica.\footnote{We assume
-that there exists some injective mapping $f : \mathcal{I} \to \mathbb{N}$.}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=.6\textwidth]{figures/vector-state.pdf}
-    \caption{A correct execution of vector-based state G-Counters exchanging
-      updates.}
-\end{figure}
-
-When an \textsf{inc} is invoked at the $i$th replica, it updates its own state
-to increment by one the vector element associated with the $i$th replica, here
-denoted $s\{i \mapsto s(i) + 1\}$. Finally, upon receiving an update from
-another replica, the pair-wise maximum is taken on each of the vector elements.
-Note that this is a commutative, associative, and idempotent operation, and so
-it forms the least upper-bound of a lattice of vectors of natural numbers.
-
-\paragraph{op-based G-Counter} In the op-based variant of the G-Counter, we can
-rely on a delivery semantics $P$ which guarantees at-most-once message
-delivery.\footnote{That is, the network is allowed to drop, reorder, and delay
-messages, but a single message will never be delivered more than once.} From
-this, we say that replicas which are ``behind'' have not yet received the set of
-all \textsf{inc} operations performed at other replicas. Replicas which are
-``behind'' may ``catch up'' when they receive the set of undelivered messages.
-However, these replicas never are ``ahead'' of any other replica, i.e., they
-never receive a message which doesn't correspond to a single \textsf{inc}
-operation at some other replica.
-
-We present now the full definition of the op-based G-Counter:
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Counter}_o = \left\{\begin{aligned}
-      S &: \mathbb{N}_+ \\
-      s^0 &: 0 \\
-      q &: \lambda s. s \\
-      t &: \textsf{inc} \\
-      u &: \lambda s,p. s + 1 \\
-    \end{aligned}\right.
-  \]
-  \caption{Specification of an op-based \textsf{G-Counter} \CRDT.}
-\end{figure}
-
-Because replicas are sometimes behind but never ahead, we know that the number
-of messages received at any given replica is no greater than the sum of the
-number of \textsf{inc} operations performed at other replicas, and the number of
-\textsf{inc} operations performed locally. So, the op-based G-Counter needs only
-to keep track of the number of \textsf{inc} operations it knows about globally,
-and this can be done using a single natural number. Hence, $S = \mathbb{N}_+$,
-and the bottom state is $0$.
-
-The query operation $q$ is as straightforward as returning the initial state.
-The \emph{prepare-update} function $t$ always produces the sentinel
-\textsf{inc}, indicating that an increment operation should be performed at the
-receiving replica. Finally, $u$ takes a state and an arbitrary
-payload\footnote{Unused in the implementation here, since the only operation is
-\textsf{inc}.} and returns the successor.
-
-\paragraph{$\delta$-state based G-Counter}
-We conclude this subsection by turning our attention to the $\delta$-state based
-G-Counter. We begin first by presenting its full definition:
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Counter}_\delta = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
-      s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
-      q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
-      u^\delta &: \lambda s,i. \left\{ i \mapsto s(i) + 1 \right\} \\
-      m^\delta &: \lambda s_1, s_2. \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
-      \mathsf{dom}(s_2) \right\}
-    \end{aligned}\right.
-  \]
-  \caption{Specification of a $\delta$-state based \textsf{G-Counter} \CRDT.}
-\end{figure}
-
-It is worth mentioning the extreme levels of similarity it shares with its
-state-based counterpart. Like the state-based G-Counter, the $\delta$-state based
-G-Counter uses the state-space $\mathbb{N}^{|\mathcal{I}|}_+$, and has $s^0 = 0$.
-Its query operation and merge are defined identically.
-
-However, unlike the state-based G-Counter, the $\delta$-state based G-Counter
-implements the update function as $\lambda s,i.\, \{ i \mapsto s(i) + 1\}$. That
-is, instead of returning the amended map (recall: $s\{ \cdots \}$), the
-$\delta$-state based G-Counter returns the \emph{singleton map} containing
-\emph{only} the updated index. Because of the definition of $m$ (namely, that it
-does a pairwise maximum over the \emph{union} of the domains of the two states),
-sending the singleton map is equivalent to sending the full map with all other
-entries being equal.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=.7\textwidth]{figures/vector-delta.pdf}
-  \caption{A pair of vector-based $\delta$-state G-Counters replicas exchanging
-    updates with each other.}
-\end{figure}
-
-This follows from the facts that: (1) the entry being updated has the same
-pairwise maximum independent of all other entries in the map, and (2) the
-pairwise maximum of all \emph{other} entries does not depend on the updated
-entry. So, taking the pairwise maximum of any state with the singleton map
-containing one updated value is equivalent to taking the pairwise maximum with
-our own state modulo one updated value. $m$ is therefore referred to as a
-\emph{$\delta$-mutator}, and the value it returns is an \emph{$\delta$
-mutation}~\citep{almedia18}.
-
-This principle of sending \emph{smaller} states (the $\delta$ mutations) which
-communicate only the \emph{changed} information is a general principle which
-we will return to in the remaining two examples.
-
-\subsection{Example: G-Set}
-\label{sec:example-gset}
-
-The G-Set is the other primitive \CRDT that we study in this thesis. In essence,
-the G-Set is a \emph{monotonic set}. In other words, the G-Set supports the
-insertion and query operations, but does not support item removal. This
-is a natural consequence of the state needing to form a monotone semi-lattice,
-where set deletion would destroy the lattice structure.\footnote{To support
-removal from a \CRDT-backed set, the 2P-Set is often used. Verifying this object
-is left to future work, which we discuss in
-Section~\ref{sec:future-pair-locale}.}
-
-\paragraph{State-based G-Set}
-
-We begin our discussion with the state-based G-Set \CRDT, the definition of
-which we present below. This is our first example of an \emph{parametric} \CRDT
-instance, where the type of the \CRDT is defined in terms of the underlying set
-of items that it supports.
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Set}_s(\mathcal{X}) = \left\{\begin{aligned}
-      S &: \mathcal{P}(\mathcal{X}) \\
-      s^0 &: \{ \} \\
-      q &: \lambda x.\, x \in s \\
-      u &: \lambda x.\, s \cup \{ x \} \\
-      m &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
-    \end{aligned}\right.
-  \]
-  \caption{state-based \textsf{G-Set} \CRDT}
-  \label{fig:gset-state}
-\end{figure}
-
-For some set $\mathcal{X}$, we can consider the state-based G-Set \CRDT
-instantiated over it, $\textsf{G-Set}_s(\mathcal{X})$. The state-space of this
-\CRDT is the power set of $\mathcal{X}$, which we denote
-$\mathcal{P}(\mathcal{X})$. Initially, the G-Set begins as the empty set, here
-denoted $\{ \}$. The three operations are defined as follows:
-\begin{itemize}
-  \item The query function $q$ is a unary relation, i.e., it determines which
-    elements are contained in the G-Set.
-  \item The update function $u$ produces the updated set formed by taking the
-    union of the existing set, and the singleton set containing the item
-    to-be-added.
-  \item Finally, the merge function $m$ takes the union of two sets.
-\end{itemize}
-Note crucially that the merge function $\cup$ defines the least upper-bound of
-two sets, and thus endows our \CRDT with a lattice structure. In this lattice of
-sets, we say that for some set $\mathcal{X}$, the lattice formed is $\langle
-\mathcal{P}(\mathcal{X}), \subseteq \rangle$.
-
-\paragraph{op-based G-Set}
-In the op-based variant of the G-Set \CRDT, we replace the state-based \CRDT's
-update function $u$ with the op-based pair $(t,u)$. The state space, initial
-state, as well as the query and merge functions ($q$ and $m$, respectively) are
-defined identically. We present the full definition as follows:
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Set}_o(\mathcal{X}) = \left\{\begin{aligned}
-      S &: \mathcal{P}(\mathcal{X}) \\
-      s^0 &: \{ \} \\
-      q &: \lambda x.\, x \in s \\
-      t &: \lambda x.\, (\textsf{ins}, x) \\
-      u &: \lambda p.\, s \cup \{(\textsf{snd}~p)\} \\
-      m &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
-    \end{aligned}\right.
-  \]
-  \caption{op-based \textsf{G-Set} \CRDT}
-\end{figure}
-
-The only difference between this \CRDT instantiation and the state-based one is
-in the definition of $(t,u)$.\footnote{This is a pattern that will become
-familiar during Chapter~\ref{chap:example-crdts}.} In the state-based \CRDT, we
-sent the updated state, i.e., $s \cup \{ x \}$. In the op-based variant, we send
-a \emph{representation} of the effect, which we take to be the pair
-$(\textsf{ins}, x)$, where $\textsf{ins}$ is a sentinel marker indicating that
-the second element in the pair should be inserted.
-
-Upon receipt of the message $(\textsf{ins}, x)$, our op-based G-Set \CRDT
-computes the new state $s \cup \{ (\snd~p) \}$, where $p$ is the message
-payload.
-
-\paragraph{$\delta$-state based G-Set}
-Finally, we turn our attention to the $\delta$-state based G-Set \CRDT. As was
-the case with the $\delta$-state based G-Counter \CRDT, this object is defined
-identically as to the state-based counter, with the notable exception of its
-update function, $u$.\footnote{This again will be another familiar pattern in
-Chapter~\ref{chap:example-crdts}.}
-
-For full formality, we present its definition below:
-
-\begin{figure}[H]
-  \centering
-  \[
-    \textsf{G-Set}_\delta(\mathcal{X}) = \left\{\begin{aligned}
-      S &: \mathcal{P}(\mathcal{X}) \\
-      s^0 &: \{ \} \\
-      q^\delta &: \lambda x.\, x \in s \\
-      u^\delta &: \lambda x.\, \{ x \} \\
-      m^\delta &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
-    \end{aligned}\right.
-  \]
-  \caption{$\delta$-state based \textsf{G-Set} \CRDT}
-\end{figure}
-
-Here, the only difference is between the state- and $\delta$-state based \CRDT's
-definition of the update method, $u$. In the state-based G-Set, update was
-defined as $u : \lambda x.\, s \cup \{ x \}$. But in the $\delta$-state based
-G-Set, the update is defined as $u : \lambda x.\, \{ x \}$. Note crucially that
-these two kinds of updates are equal when applied to the same local state.
-Consider a state- and $\delta$-state based G-Set, both starting at the same
-state $s^t$. For the state-based G-Set, we have:
-\[
-  \begin{aligned}
-    m(s^t, u(x))
-      &= s^t \cup (s^t \cup \{ x \}) \\
-      &= (s^t \cup s^t) \cup \{ x \} \\
-      &= s^t \cup \{ x \} \\
-  \end{aligned}
-\]
-whereas for the $\delta$-based G-Set, we have directly:
-\[
-  m^\delta(s^t, u^\delta(x)) = s^t \cup \{ x \}
-\]
