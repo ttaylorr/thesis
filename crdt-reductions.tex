@@ -10,9 +10,9 @@ Specifically, we will discuss the following:
   \item In Section~\ref{sec:state-as-op}, we will describe a mapping $\phi$ to
     view state-based \CRDTs in terms of their op-based counterparts.
   \item In Section~\ref{sec:delta-as-state}, we will note a key similarity
-    between state- and $\delta$-state based \CRDTs. This intuition will allow us
-    to use $\phi$ to reason about $\delta$-state \CRDTs in terms of op-based
-    \CRDTs.
+    between state- and $\delta$-state based \CRDTs and introduce a class
+    \emph{generalized state-based \CRDTs}. This intuition will allow us to use
+    $\phi$ to reason about $\delta$-state \CRDTs in terms of op-based \CRDTs.
 \end{itemize}
 
 In this section, we will identify and discuss the two key intuitions which guide
@@ -156,14 +156,34 @@ states. We restate this Maxim for clarity:
 \end{maxim}
 
 \section{Generalized state-based \CRDTs}
-\TODO
+While it would be convenient to be able to map $\delta$-state \CRDTs to
+state-based \CRDTs identically, this is not possible. Specifically, it elides
+the key benefit of using $\delta$-state \CRDTs over pure state-based \CRDTs,
+which is the reduced payload size in $\delta$-state \CRDTs.
+
+To address this, we propose a new \emph{class} of state-based \CRDTs,
+encompassing both the state- and $\delta$-state variants, which we refer to as
+\emph{generalized state-based \CRDTs}. Like usual, we define a general
+state-based \CRDT to be a $5$-tuple $(S, s^0, q, u, m)$, where all elements
+except $u$ are defined identically to traditional state-based \CRDTs.
+
+Unlike traditional state-based \CRDTs, however, $u$ does \emph{not} cause the
+\CRDT to send its full state after an update. Instead, $u$ returns \emph{any}
+state in the lattice $s$ so long as $s \sqsubseteq s^t$, where $s^t$ is the
+current state.
+
+Immediately, we can observe that traditional state-based \CRDTs are members of
+the class of generalized state-based \CRDTs. This follows from the fact that
+after updating to state $s^t$, they send their full state, and $s^t \sqsubseteq
+s^t$.
 
 \section{$\delta$-state based \CRDTs as general state-based \CRDTs}
 \label{sec:delta-as-state}
-Now that we have a procedure for representing a state-based \CRDT as an
-equivalent op-based \CRDT under the mapping $\phi$, we only need to discover a
-similar such mapping from a $\delta$-state to generalized state-based \CRDT.
-Then, composing the two allows us to obtain:
+Now that we have both a procedure for representing a state-based \CRDT as an
+equivalent op-based \CRDT under the mapping $\phi$, and a generalized class of
+state-based \CRDTs, we only need to discover a similar such mapping from a
+$\delta$-state to generalized state-based \CRDT.  Then, composing the two allows
+us to obtain:
 \[
   \phi_{\delta \to \text{op}} =
     \phi_{\text{state} \to \text{op}} \circ
@@ -176,8 +196,7 @@ clarity:
 
 \setcounter{maxim}{1}
 \begin{maxim}
-  A $\delta$-state based \CRDT is a state-based \CRDT which is allowed to send
-  messages which do not reflect the entirety of its current state.
+  All $\delta$-state based \CRDTs are generalized state-based \CRDTs.
 \end{maxim}
 
 This is a crucial property of $\delta$-state \CRDTs that we reason about now. Any
@@ -187,7 +206,7 @@ only difference between state- and $\delta$-state \CRDTs is that the
 \emph{communicated} state is a \emph{fragment} of the overall state. Crucially,
 these fragments are themselves part of the lattice $S$, which makes them
 suitable for sending around and reasoning about as identically to state-based
-\CRDTs.
+\CRDTs, and thus they are generalized state-based \CRDTs.
 
 Therefore, we have a straightforward procedure for reasoning about
 $\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
