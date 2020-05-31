@@ -14,15 +14,15 @@ the other hand, op-based \CRDTs communicate \emph{operations} (not state), thus
 making these updates non-idempotent.  Whereas op-based \CRDTs require little
 information to be exchanged, they demand relatively strong network guarantees
 (exactly-once message delivery), and state-based \CRDTs suffer the opposite
-problem. Both satisfy \textit{strong eventual consistency} (\SEC)
+problem. Both satisfy \textit{strong eventual consistency} (\SEC).
 
-We posit that $\delta$-\CRDTs both (1) require minimal communication overhead
+We posit that $\delta$-\CRDTs both (1) require less communication overhead
 from payload size, and (2) tolerate relatively weak network environments, making
 them an ideal candidate for real-world use of \CRDTs. Our central intuition is
 that state-based \CRDTs are equivalent to op-based \CRDTs when the operation is
-a join of the state. We formalize this intuition in Isabelle and show that
-state-based \CRDTs achieve \SEC. We present a weak the network model in Isabelle
-and show that state-based \CRDTs still maintain \SEC. Finally, we extend our
-work to gossip members of the \textit{sub-lattice}, thus showing that
-$\delta$-\CRDTs achieve \SEC also, even under relatively weak network
-guarantees.
+a join of the state. We formalize this intuition in the Isabelle interactive
+theorem prover and show that state-based \CRDTs achieve \SEC. We present a
+relaxed network model in Isabelle and show that state-based \CRDTs still
+maintain \SEC. Finally, we extend our work to show that $\delta$-state \CRDTs
+maintain \SEC when only communicating $\delta$-state fragments, even under
+relatively weak network conditions.

@@ -52,7 +52,7 @@ follows:
 \[
   \phi_{\text{state} \to \text{op}} :
     \underbrace{(S, s^0, q, u, m)}_{\text{state-based \CRDTs}} \longrightarrow
-    \underbrace{(S, s^0, q, t, u)}_{\text{op-based \CRDTs}}
+    \underbrace{(S, s^0, q, t, u, P)}_{\text{op-based \CRDTs}}
 \]
 For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
 between state- and op-based \CRDTs. If we had such a structure-preserving
@@ -69,7 +69,14 @@ op-based framework looks as follows:
   \item Use $C_o$ as input to the verification tool.
 \end{enumerate}
 
-We'll now turn to describing the details of $\phi{\text{state} \to \text{op}}$,
+Note that $P$ (the delivery precondition on the right-hand side) is the only
+element which does not have a natural analog on the left-hand side.
+Traditionally it is common to have a $P$ which preserves causality, but this is
+not necessary for our proofs (since we map states identically as in the
+following section). Therefore, we assume that $P$ is always met, in which case
+delivery can always occur immediately on the right-hand side.
+
+We'll now turn to describing the details of $\phi_{\text{state} \to \text{op}}$,
 which for convenience in this section, we'll abbreviate as simply
 $\phi$.\footnote{In the following section, we'll define a new homomorphism
 between state- and $\delta$-state based \CRDTs, at which point we will
@@ -94,7 +101,7 @@ Section~\label{sec:example-gcounter}).
 In order to make $\phi$ a simple reduction, we allow the state spaces of the
 \CRDT before and after the reduction to be identical. Though \CRDT designers can
 often be more clever than this in practice, this makes reasoning about the
-transformation much simpler for the purposes of our proofs.  Likewise, Since the
+transformation much simpler for the purposes of our proofs.  Likewise, since the
 query function $q$ is defined in terms of the state-space, $S$, we let $\phi$
 preserve the implementation of $q$ under the mapping, too.
 
@@ -121,7 +128,7 @@ mechanized):
 \begin{proof}[Proof sketch]
 By simulation. Since $s^0_o = s^0$, both objects begin in the same state. Since
 $q_o = q$, if the state of $C_o$ and $C_s$ are equal, then $q_o$ will reflect as
-much. Finally, and update is prepared locally by computing the updated
+much. Finally, an update is prepared locally by computing the updated
 state-based representation. That update is applied both locally and at all
 replicas by merging the prepared state into $C_o$'s own state, preserving the
 equality.
@@ -148,12 +155,15 @@ states. We restate this Maxim for clarity:
   states.
 \end{maxim}
 
-\section{$\delta$-state based \CRDTs as state-based}
+\section{Generalized state-based \CRDTs}
+\TODO
+
+\section{$\delta$-state based \CRDTs as general state-based \CRDTs}
 \label{sec:delta-as-state}
 Now that we have a procedure for representing a state-based \CRDT as an
 equivalent op-based \CRDT under the mapping $\phi$, we only need to discover a
-similar such mapping from a $\delta$-state to state-based \CRDT.  Then,
-composing the two allows us to obtain:
+similar such mapping from a $\delta$-state to generalized state-based \CRDT.
+Then, composing the two allows us to obtain:
 \[
   \phi_{\delta \to \text{op}} =
     \phi_{\text{state} \to \text{op}} \circ

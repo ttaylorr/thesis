@@ -2,7 +2,7 @@
 \label{chap:future-work}
 
 This chapter outlines potential future research directions based on interesting
-and under-explored areas in this work. Here, we will outline six directions in
+and under-explored areas in this work. Here, we will outline three directions in
 the area of verifying $\delta$-state \CRDTs, as well as some insight that might
 be gained by exploring each of these directions. It is our hope that future
 researchers in this area may choose to conduct further investigation into these
@@ -160,9 +160,9 @@ algorithm for $\delta$-state \CRDTs is to do the following:
     flush the $\delta$-group.
 \end{enumerate}
 This ensures that--even without outside interaction--the system as in
-Figure~\ref{fig:delta-sec-violation} will eventually recover, since either one
-of $r_1$ or $r_2$ will, at some point, send their full state to all other
-replicas, including $r_3$, at which point $r_3$ will have caught up.
+Figure~\ref{fig:delta-sec-violation} will eventually recover. This follows since
+either one of $r_1$ or $r_2$ will at some point send their full state to all
+other replicas, including $r_3$, at which point $r_3$ will have caught up.
 
 We believe that it would be a worthwhile research goal to encode this
 anti-entropy algorithm into a proof assistant, and specify that $\delta$-state

@@ -83,15 +83,8 @@ from~\cite{shapiro11}.
 
 Broadly speaking, there are two classes of \CRDTs, which we refer to as the op-
 and state-based variants. We will provide formal definitions for each of the two
-classes in due time (Chapter~\ref{chap:background}), but for now it is
-sufficient to distinguish the two as sending different kinds of
-messages.\footnote{It is sufficient to consider the op-based \CRDT as sending
-representations of actions: increment some value, place an item in a set, and so
-on. On the other hand, it suffices to consider state-based \CRDTs as sending the
-representation of the effect of that action: ``my counter is now $x$,'' ``my set
-includes these elements,'' and so on. State-based \CRDTs are furthermore
-equipped with a $\sqcup$ which is capable of merging two states together, and is
-discussed in detail in Section~\ref{sec:state-based-crdts}.}
+classes in Chapter~\ref{chap:background}, but will describe each class
+informally below.
 
 \CRDTs have seen moderate use in industry, too. Based on introspection of the
 runtime headers in iOS, Apple is believed to use a state-based \CRDT for offline
@@ -199,11 +192,12 @@ messages from the original work of~\citet{gomes17}, but further weaken the
 network model by also allowing messages to be duplicated.} these $\delta$-state
 \CRDTs still achieve \SEC.
 
-Our verification efforts yielded a portfolio of different $\delta$-state \CRDTs
-(the grow-only counter (G-Counter) and set (G-Set)). Our key idea guiding these
-verification efforts is to treat op- and state-based \CRDTs similarly by
-modeling state-based \CRDTs as op-based where the operation is the join provided
-by the semi-lattice.\footnote{This approach is described in detail in
+Our verification efforts yielded a pair of \CRDTs---the grow-only counter
+(G-Counter) and set (G-SET)---in three encodings: one state-based, and two
+$\delta$-state encodings. Our key idea guiding these verification efforts is to
+treat op- and state-based \CRDTs similarly by modeling state-based \CRDTs as
+op-based where the operation is the join provided by the
+semi-lattice.\footnote{This approach is described in detail in
 Section~\ref{sec:state-as-op}.} We use this idea to build state- and
 $\delta$-state \CRDTs on top of the library provided in~\citet{gomes17}, and
 show that the
@@ -212,7 +206,7 @@ still be instantiated over this portfolio, even when the underlying $network$
 locale has been weakened substantially from when it was introduced in the
 aforementioned work.
 
-The reminder of this thesis is ordered as follows:
+The remainder of this thesis is ordered as follows:
 \begin{itemize}
   \item In Chapter~\ref{chap:background}, we summarize existing research in the
     broader realm of conflict-free replicated datatypes. We present formal
@@ -227,7 +221,7 @@ The reminder of this thesis is ordered as follows:
     between state-, op-, and $\delta$-state based \CRDTs which guides the
     majority of our proof strategy.
   \item In Chapter~\ref{chap:example-crdts}, we discuss the outcome of our
-    approach by presenting a portfolio of successfully-verified $\delta$-state
+    approach by presenting a pair of successfully-verified $\delta$-state
     \CRDTs, as well as describe our efforts in weakening the network model in
     order to verify these objects over a non-trivial set of network behaviors.
   \item In Chapter~\ref{chap:future-work}, we suggest future

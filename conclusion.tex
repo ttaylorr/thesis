@@ -12,10 +12,10 @@ This allowed us to successfully verify that two \CRDTs--the G-Counter, and
 G-Set--achieve \SEC when specified both in the state- and $\delta$-state based
 style.
 
-In addition, we strengthened the network model by removing an assumption that
-all messages are unique. While our main result is still predicated on a set of
-nice delivery semantics $P$, this allowed us to quantify over an expanded set of
-all possible network executions.
+In addition, we relaxed the network model by removing an assumption that all
+messages are unique. While our main result is still predicated on a set of nice
+delivery semantics $P$, this allowed us to quantify over an expanded set of all
+possible network executions.
 
 Together, this allowed us to restate the main result of~\citet{almedia18} in a
 mechanized fashion. We believe that $\delta$-state \CRDTs satisfy an appealing

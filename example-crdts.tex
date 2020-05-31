@@ -1,14 +1,14 @@
-\chapter{Example \CRDTs under Weak Network Model}
+\chapter{Example \CRDTs under Relaxed Network Model}
 \label{chap:example-crdts}
 
 We have mechanized proofs that two state- and $\delta$-state based \CRDTs
-achieve \SEC. We weakened the underlying network model to
-support non-unique messages (Section~\ref{sec:network-relaxations}), and then
-showed that both the state- and $\delta$-state based G-Counter and G-Set inhabit
-\SEC (Sections~\ref{sec:isabelle-state-crdts}
-and~\ref{sec:isabelle-delta-crdts}). Finally, we present an alternative encoding
-of the reduction in Chapter~\ref{chap:crdt-reductions} for $\delta$-state
-\CRDTs (Section~\ref{sec:alternate-delta-encoding}).
+achieve \SEC. We relax the underlying network model to support non-unique
+messages (Section~\ref{sec:network-relaxations}), and then showed that both the
+state- and $\delta$-state based G-Counter and G-Set inhabit \SEC
+(Sections~\ref{sec:isabelle-state-crdts} and~\ref{sec:isabelle-delta-crdts}).
+Finally, we present an alternative encoding of the reduction in
+Chapter~\ref{chap:crdt-reductions} for $\delta$-state \CRDTs
+(Section~\ref{sec:alternate-delta-encoding}).
 
 \section{Network Relaxations}
 \label{sec:network-relaxations}
@@ -45,16 +45,16 @@ preconditions:
     relation is preserved during delivery).
   \item The set of messages delivered at each node is distinct.\footnote{Note
     that the messages transited by the network may be non-distinct. This is
-    another standard assumption~\citep{} which can be implemented by tagging
-    each message with a vector clock or assigning a globally unique identifier,
-    and having each receiving node discard duplicates.}
+    another standard assumption which can be implemented by tagging each message
+    with a vector clock or assigning a globally unique identifier, and having
+    each receiving node discard duplicates.}
   \item That concurrent operations commute.
   \item That correct nodes do not fail, i.e., that they remain responsive during
     the execution.
 \end{itemize}
 
 While we consider the above to be a reasonable delivery semantics, we wish to
-strengthen the network model in order to support duplicated messages. This
+relax the network model in order to support duplicated messages. This
 behavior is not permitted by the original network model in~\citet{gomes17},
 which assumes that each message in transit on the network has a unique
 identifier.
@@ -85,8 +85,8 @@ To see this, consider the following example:
 \end{example}
 
 So, while it is often a safety violation for an op-based \CRDT to receive the
-same message twice\footnote{This is the primary reason why it is a standard
-assumption of op-based network models to disallow non-unique messages},
+same message twice,\footnote{This is the primary reason why it is a standard
+assumption of op-based network models to disallow non-unique messages}
 state- and $\delta$-state based \CRDTs can and should tolerate this class of
 degenerate behaviors.
 
@@ -116,7 +116,7 @@ message identifiers are unique.
 
 \subsection{Delivery Semantics}
 In their original network model, the authors of~\citet{gomes17} use an Isabelle
-\textit{locale} in order to parameterize varying instantiations of the network
+\emph{locale} in order to parameterize varying instantiations of the network
 based on certain assumptions. They provide the following definition for the
 Network locale~\citep{gomes17}:
 \begin{figure}[H]
@@ -149,12 +149,12 @@ messages are identical.
 
 Although our proofs are still instantiated after fulfilling the qualifier $P$,
 we still wish to reason about an expanded set of network executions which
-includes message dropping.\footnote{Since op-based \CRDTs require nice semantics
-$P$, we cannot remove the dependence on $P$ without substantial alternation to
-the library. We leave this to future work, and discuss it in greater detail in
-Chapter~\ref{chap:future-work}.}
+includes message dropping.\footnote{Since op-based \CRDTs require
+causality-preserving semantics $P$, we cannot remove the dependence on $P$
+without substantial alternation to the library. We leave this to future work,
+and discuss it in greater detail in Chapter~\ref{chap:future-work}.}
 
-For our purposes, we begin by specifying a strengthened Network locale as
+For our purposes, we begin by specifying a relaxed $\isa{network}$ locale as
 follows:
 \begin{isabelle}
 ~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
@@ -168,7 +168,7 @@ follows:
 
 Removing this assumption immediately invalidates many of the proofs contained
 within the $\isa{network}$ locale. These proofs are broken due to a variety of
-reasons, ranging form something as simple as referencing a now-missing
+reasons, ranging from something as simple as referencing a now-missing
 assumption, to more complex issues, e.g., a proof which relies on the uniqueness
 of delivered messages.
 
@@ -229,7 +229,7 @@ they reach the same state if the same set of messages is delivered \emph{at
 least once} to each of the replicas. Said otherwise, it does not matter how many
 times a message was delivered at each of two replicas, so long as it was
 delivered at least once at both. This allows us to exercise the latter case of
-Example~\ref{example:state-op-dup-msgs} using the strengthened network model.
+Example~\ref{example:state-op-dup-msgs} using the relaxed network model.
 
 \section{State-based \CRDTs}
 \label{sec:isabelle-state-crdts}
@@ -343,7 +343,7 @@ values up front upon merging.
 
 Now that we have an instantiation of how to modify and merge states (the
 equivalent of the $u$ and $m$), it remains to show that this is a suitable
-initiation of the
+instantiation of the
 $\isa{strong}\isacharunderscore\isa{eventual}\isacharunderscore\isa{consistency}$
 locale.\footnote{Recall that instating this locale is equivalent to a proof that
 the object it is being instantiated with has \SEC.}
@@ -386,7 +386,7 @@ This and the above proof establish the following two lemmas:
 The first property is a helpful lemma which is used in internal proofs, but the
 second lemma should be familiar to the reader: this is the safety property of
 \SEC! Note also that this is the first time that we are seeing our efforts in
-weakening the network model bear fruit. That is, even though the two \emph{sets}
+relaxing the network model bear fruit. That is, even though the two \emph{sets}
 must be equal, we do not make a restriction on the number of times that a
 particular message is delivered at either node. This allows us to prove a
 stronger result that this \CRDT achieves a consistent result despite the number
@@ -490,10 +490,11 @@ inhabitants of the \SEC locale.
 
 This follows simply from construction and our reductions. Recall our statement
 in Maxim~\ref{maxim:delta-as-state} that all $\delta$-state \CRDTs are
-themselves $\delta$-state based \CRDTs, only with additional restriction on what
-states are sent to other replicas. All that suffices to show is that restricted
-executions of the datatype--that is, ones in which only $\delta$-state fragments
-are sent, and not full state--still inhabit the \SEC locale.
+themselves generalized-state based \CRDTs, only with additional restriction on
+what states are sent to other replicas. All that suffices to show is that
+restricted executions of the datatype--that is, ones in which only
+$\delta$-state fragments are sent, and not full state--still inhabit the \SEC
+locale.
 
 Recall that, since our proofs reason about state transitions inductively, we
 have implicitly covered the case in which only $\delta$-fragments of state are
@@ -737,12 +738,12 @@ encoding.
 
 \section{Conclusion}
 
-In this Chapter, we motivated our rationale behind weakening the network model
+In this Chapter, we motivated our rationale behind relaxing the network model
 on top of which we verify our \CRDTs. We described our proof strategy for
-weakening the network model, and presented two example \CRDTs which we verified
+relaxing the network model, and presented two example \CRDTs which we verified
 on top of this network model. We began each example by showing the state-based
 object, and a proof that each \CRDT inhabits the \SEC locale, even on the
-weakened network model.
+relaxed network model.
 
 We then reasoned that our state-based example \CRDTs in fact establish the same
 goal for $\delta$-state \CRDTs without additional modification, according to our
