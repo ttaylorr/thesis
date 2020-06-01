@@ -1,9 +1,9 @@
 \begin{isabellebody}
 \isacommand{locale}\isamarkupfalse%
-\ gset\ {\isacharequal}\ network{\isacharunderscore}with{\isacharunderscore}ops\ {\isacharunderscore}\ gset{\isacharunderscore}op\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ delta{\isacharunderscore}gset\ {\isacharequal}\ network{\isacharunderscore}with{\isacharunderscore}ops\ {\isacharunderscore}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
 \isanewline
 \isacommand{lemma}\isamarkupfalse%
-\ {\isacharparenleft}\isakeyword{in}\ gset{\isacharparenright}\ {\isacharbrackleft}simp{\isacharbrackright}\ {\isacharcolon}\ {\isachardoublequoteopen}gset{\isacharunderscore}op\ x\ {\isasymrhd}\ gset{\isacharunderscore}op\ y\ {\isacharequal}\ gset{\isacharunderscore}op\ y\ {\isasymrhd}\ gset{\isacharunderscore}op\ x{\isachardoublequoteclose}\isanewline
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ {\isacharbrackleft}simp{\isacharbrackright}\ {\isacharcolon}\ {\isachardoublequoteopen}delta{\isacharunderscore}gset{\isacharunderscore}op\ x\ {\isasymrhd}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ y\ {\isacharequal}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ y\ {\isasymrhd}\ delta{\isacharunderscore}gset{\isacharunderscore}op\ x{\isachardoublequoteclose}\isanewline
 %
 \isadelimproof
 \ \ %
@@ -23,7 +23,7 @@
 \endisadelimproof
 \isanewline
 \isacommand{lemma}\isamarkupfalse%
-\ {\isacharparenleft}\isakeyword{in}\ gset{\isacharparenright}\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharcolon}\isanewline
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharcolon}\isanewline
 \ \ \isakeyword{assumes}\ {\isachardoublequoteopen}xs\ prefix\ of\ i{\isachardoublequoteclose}\isanewline
 \ \ \isakeyword{shows}\ {\isachardoublequoteopen}hb{\isachardot}concurrent{\isacharunderscore}ops{\isacharunderscore}commute\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
 %
@@ -49,7 +49,7 @@
 \endisadelimproof
 \isanewline
 \isacommand{corollary}\isamarkupfalse%
-\ {\isacharparenleft}\isakeyword{in}\ gset{\isacharparenright}\ set{\isacharunderscore}convergence{\isacharcolon}\isanewline
+\ {\isacharparenleft}\isakeyword{in}\ delta{\isacharunderscore}gset{\isacharparenright}\ set{\isacharunderscore}convergence{\isacharcolon}\isanewline
 \ \ \isakeyword{assumes}\ {\isachardoublequoteopen}set\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs{\isacharparenright}\ {\isacharequal}\ set\ {\isacharparenleft}node{\isacharunderscore}deliver{\isacharunderscore}messages\ ys{\isacharparenright}{\isachardoublequoteclose}\isanewline
 \ \ \ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}xs\ prefix\ of\ i{\isachardoublequoteclose}\isanewline
 \ \ \ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}ys\ prefix\ of\ j{\isachardoublequoteclose}\isanewline
@@ -73,7 +73,7 @@
 \endisadelimproof
 \isanewline
 \isacommand{context}\isamarkupfalse%
-\ gset\ \isakeyword{begin}\isanewline
+\ delta{\isacharunderscore}gset\ \isakeyword{begin}\isanewline
 \isanewline
 \isacommand{sublocale}\isamarkupfalse%
 \ sec{\isacharcolon}\ strong{\isacharunderscore}eventual{\isacharunderscore}consistency\ weak{\isacharunderscore}hb\ hb\ interp{\isacharunderscore}msg\isanewline
@@ -89,7 +89,7 @@
 \ \ \ \ \ \ \isacommand{apply}\isamarkupfalse%
 {\isacharparenleft}auto\ simp\ add{\isacharcolon}\ hb{\isacharunderscore}consistent{\isacharunderscore}prefix\ drop{\isacharunderscore}last{\isacharunderscore}message\ node{\isacharunderscore}deliver{\isacharunderscore}messages{\isacharunderscore}distinct\ concurrent{\isacharunderscore}operations{\isacharunderscore}commute{\isacharparenright}\isanewline
 \ \ \ \isacommand{apply}\isamarkupfalse%
-{\isacharparenleft}metis\ {\isacharparenleft}full{\isacharunderscore}types{\isacharparenright}\ interp{\isacharunderscore}msg{\isacharunderscore}def\ gset{\isacharunderscore}op{\isachardot}elims{\isacharparenright}\isanewline
+{\isacharparenleft}metis\ {\isacharparenleft}full{\isacharunderscore}types{\isacharparenright}\ interp{\isacharunderscore}msg{\isacharunderscore}def\ delta{\isacharunderscore}gset{\isacharunderscore}op{\isachardot}elims{\isacharparenright}\isanewline
 \ \ \isacommand{using}\isamarkupfalse%
 \ drop{\isacharunderscore}last{\isacharunderscore}message\ \isacommand{apply}\isamarkupfalse%
 \ blast\isanewline

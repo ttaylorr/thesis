@@ -3,6 +3,7 @@
 SECTIONS =
 SECTIONS += abstract.tex
 SECTIONS += acknowledgements.tex
+SECTIONS += appendix.tex
 SECTIONS += background.tex
 SECTIONS += conclusion.tex
 SECTIONS += crdt-instantiations.tex
@@ -28,9 +29,11 @@ FIGURES =
 FIGURES += figures/theories/delta-gcounter-appendix.tex
 FIGURES += figures/theories/delta-gcounter.tex
 
+FIGURES += figures/theories/restricted-delta-gset-appendix.tex
 FIGURES += figures/theories/delta-gset-appendix.tex
 FIGURES += figures/theories/delta-gset.tex
 
+FIGURES += figures/theories/restricted-delta-gcounter-appendix.tex
 FIGURES += figures/theories/delta-gcounter-refined-ops.tex
 FIGURES += figures/theories/delta-gcounter-refined-state.tex
 FIGURES += figures/theories/delta-gset-refined-ops.tex
