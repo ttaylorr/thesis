@@ -55,8 +55,6 @@
 \newtheorem{maxim}{Maxim}[chapter]
 \newtheorem{example}{Example}[chapter]
 
-\newcommand*{\TODO}[1][]{\text{\color{red} TODO {#1}}}
-
 \newcommand*{\fst}{\ensuremath{\textsf{fst}}}
 \newcommand*{\snd}{\ensuremath{\textsf{snd}}}
 
