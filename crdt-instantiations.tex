@@ -47,7 +47,7 @@ definition:
   \centering
   \[
     \textsf{G-Counter}_s = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
+      S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
       q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
       u &: \lambda s,i. s\left\{ i \mapsto s(i) + 1 \right\} \\
@@ -59,8 +59,8 @@ definition:
   \label{fig:state-gcounter}
 \end{figure}
 
-Notice that the state space $\mathbb{N}^{|\mathcal{I}|}_+$ does not match the
-return type of the query function, $q$, which is simply $\mathbb{N}_+$. One way
+Notice that the state space $\mathbb{N}^{|\mathcal{I}|}_0$ does not match the
+return type of the query function, $q$, which is simply $\mathbb{N}_0$. One way
 to understand this is to consider what might happen to certain interleavings of
 updates using this state-space. Consider the following incorrect example, which
 illustrates why the state-based G-Counter does not use a scalar state:
@@ -132,7 +132,7 @@ We present now the full definition of the op-based G-Counter:
   \centering
   \[
     \textsf{G-Counter}_o = \left\{\begin{aligned}
-      S &: \mathbb{N}_+ \\
+      S &: \mathbb{N}_0 \\
       s^0 &: 0 \\
       q &: \lambda s. s \\
       t &: \textsf{inc} \\
@@ -147,7 +147,7 @@ of messages received at any given replica is no greater than the sum of the
 number of \textsf{inc} operations performed at other replicas, and the number of
 \textsf{inc} operations performed locally. So, the op-based G-Counter needs only
 to keep track of the number of \textsf{inc} operations it knows about globally,
-and this can be done using a single natural number. Hence, $S = \mathbb{N}_+$,
+and this can be done using a single natural number. Hence, $S = \mathbb{N}_0$,
 and the bottom state is $0$.
 
 The query operation $q$ is as straightforward as returning the current state.
@@ -164,7 +164,7 @@ closely mirror the state-space of its state-based counterpart, as follows:
   \centering
   \[
     \textsf{G-Counter}_o' = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
+      S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: [ 0, 0, \cdots, 0 ] \\
       q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
       t &: (\textsf{inc}, i)) \\
@@ -188,7 +188,7 @@ G-Counter. We begin first by presenting its full definition:
   \centering
   \[
     \textsf{G-Counter}_\delta = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \\
+      S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
       q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
       u^\delta &: \lambda s,i. \left\{ i \mapsto s(i) + 1 \right\} \\
@@ -201,7 +201,7 @@ G-Counter. We begin first by presenting its full definition:
 
 It is worth mentioning the extreme levels of similarity it shares with its
 state-based counterpart. Like the state-based G-Counter, the $\delta$-state based
-G-Counter uses the state-space $\mathbb{N}^{|\mathcal{I}|}_+$, and has $s^0 = 0$.
+G-Counter uses the state-space $\mathbb{N}^{|\mathcal{I}|}_0$, and has $s^0 = 0$.
 Its query operation and merge are defined identically.
 
 However, unlike the state-based G-Counter, the $\delta$-state based G-Counter

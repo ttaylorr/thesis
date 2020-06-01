@@ -186,25 +186,26 @@ $m^\delta_{i,k}$ refers to the $\delta$-mutation applied at the $i$th replica
 $i$ at time $k$.
 
 In other words, we rely on the work of~\citet{gomes17} in order to build a
-portfolio of $\delta$-state \CRDTs as in~\citet{almedia18} and show that even
+handful of $\delta$-state \CRDTs as in~\citet{almedia18} and show that even
 under weak network guarantees\footnote{We inherit dropping and reordering of
-messages from the original work of~\citet{gomes17}, but further weaken the
+messages from the original work of~\citet{gomes17}, but further relax the
 network model by also allowing messages to be duplicated.} these $\delta$-state
 \CRDTs still achieve \SEC.
 
 Our verification efforts yielded a pair of \CRDTs---the grow-only counter
-(G-Counter) and set (G-SET)---in three encodings: one state-based, and two
+(G-Counter) and set (G-Set)---in three encodings: one state-based, and two
 $\delta$-state encodings. Our key idea guiding these verification efforts is to
 treat op- and state-based \CRDTs similarly by modeling state-based \CRDTs as
 op-based where the operation is the join provided by the
 semi-lattice.\footnote{This approach is described in detail in
-Section~\ref{sec:state-as-op}.} We use this idea to build state- and
-$\delta$-state \CRDTs on top of the library provided in~\citet{gomes17}, and
-show that the
-$strong{\isacharunderscore}eventual{\isacharunderscore}consistency$ locale can
-still be instantiated over this portfolio, even when the underlying $network$
-locale has been weakened substantially from when it was introduced in the
-aforementioned work.
+Section~\ref{sec:state-as-op}.} We generalize state- and $\delta$-state \CRDTs
+into a new class called \emph{generalized state-based \CRDTs}, and then use
+these ideas to verify state- and $\delta$-state \CRDTs on top of the library
+provided in~\citet{gomes17}.  We show that the
+$\isa{strong}{\isacharunderscore}\isa{eventual}{\isacharunderscore}\isa{consistency}$
+locale can still be instantiated over these \CRDTs, even when the underlying
+$\isa{network}$ locale has been weakened substantially from when it was
+introduced in the aforementioned work.
 
 The remainder of this thesis is ordered as follows:
 \begin{itemize}
@@ -219,10 +220,11 @@ The remainder of this thesis is ordered as follows:
     the subject of our verification efforts in Chapter~\ref{chap:example-crdts}.
   \item In Chapter~\ref{chap:crdt-reductions}, we outline a pair of reductions
     between state-, op-, and $\delta$-state based \CRDTs which guides the
-    majority of our proof strategy.
+    majority of our proof strategy. We also define the class of
+    \emph{generalized state-based \CRDTs}.
   \item In Chapter~\ref{chap:example-crdts}, we discuss the outcome of our
     approach by presenting a pair of successfully-verified $\delta$-state
-    \CRDTs, as well as describe our efforts in weakening the network model in
+    \CRDTs, as well as describe our efforts in relaxing the network model in
     order to verify these objects over a non-trivial set of network behaviors.
   \item In Chapter~\ref{chap:future-work}, we suggest future
     research directions. We consider a handful of areas in which formalizing

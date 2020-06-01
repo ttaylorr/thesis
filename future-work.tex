@@ -38,7 +38,7 @@ PN-Counter. One possible specification for a $\delta$-based PN-Counter follows:
 \begin{figure}[H]
   \[
     \textsf{PN-Counter}_\delta = \left\{\begin{aligned}
-      S &: \mathbb{N}_+^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
+      S &: \mathbb{N}_0^{|\mathcal{I}|} \times \mathbb{N}_+^{|\mathcal{I}|} \\
       s^0 &: \left[ 0, 0, \cdots, 0 \right] \times \left[ 0, 0, \cdots, 0 \right] \\
       q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} (\fst~s)(i) - \sum_{i \in
         \mathcal{I}} (\snd~s)(i) \\
@@ -85,11 +85,11 @@ or that for any pair of correct replicas $i$, $j$ with histories $c_i$ and
 $c_j$, respectively, an update received at one of those replicas is eventually
 received at all other replicas.
 
-Of course, under weak delivery semantics (i.e., in the case that the network may
-delay messages for an infinite amount of time), op-based \CRDTs do not achieve
-this property~\citep{shapiro11}. Namely, if an operation is performed at some
-replica, and that message is dropped while in transit to another replica, that
-replica will never receive the message.
+Of course, under relaxed delivery semantics (i.e., in the case that the network
+may delay messages for an infinite amount of time), op-based \CRDTs do not
+achieve this property~\citep{shapiro11}. Namely, if an operation is performed at
+some replica, and that message is dropped while in transit to another replica,
+that replica will never receive the message.
 
 State-based \CRDTs do not suffer from this problem, since \emph{every} update
 they send encapsulates the history of all previous updates, since each update is

@@ -69,8 +69,8 @@ participant which was no longer able to fulfill them?
 \section{Distributed Consensus Algorithms}
 \label{sec:dca-safety}
 
-This gives rise to the area of consensus algorithms. A consensus algorithm,
-broadly speaking, is a routine which multiple participants follow in order to
+This gives rise to the area of consensus algorithms. Broadly speaking, a
+consensus algorithm is a routine which multiple participants follow in order to
 agree on a shared value.
 
 We first state briefly the properties that an algorithm must have to solve
@@ -172,11 +172,12 @@ properties~\citep{shapiro11}:
 \end{enumerate}
 
 \EC is a relatively weak form of consistency. In~\citet{shapiro11}, it is
-observed that \EC systems will execute an update immediately only to discover
-that it produces a conflict with some future update, and so a roll-back is
-performed. This imposes an additional constraint, which is that replicas need
-to form consensus on the ``standard'' way to resolve conflicts so that the same
-conflicts are resolved identically at different replicas.
+observed that \EC systems will sometimes execute an update immediately only to
+discover that it produces a conflict with some future update, and so frequent
+roll-backs may be performed. This imposes an additional constraint, which is
+that replicas need to form consensus on the ``standard'' way to resolve
+conflicts so that the same conflicts are resolved identically at different
+replicas.
 
 We devote some additional discussion to the first property of \EC. Eventual
 delivery requires that all updates delivered to some correct replica are
@@ -302,7 +303,7 @@ any states $s_1$, $s_2$, and $s_3$, that:
     s_3) = (s_1 \sqcup s_2) \sqcup s_3$, or that grouping of arguments does not
     matter.
   \item Finally, the operator is \emph{idempotent}, i.e., that $(s_1 \sqcup s_2)
-    \sqcup 2_2 = s_1 \sqcup s_2$, or that repeated updates reach a fixed point.
+    \sqcup s_2 = s_1 \sqcup s_2$, or that repeated updates reach a fixed point.
 \end{itemize}
 
 These mathematical properties correspond to real-world constraints that often
@@ -327,7 +328,7 @@ delivered. Then, we can see that the choice of $\pi$ is arbitrary, because:
 \]
 for any choice of $\pi$, because
 \[
-  s_{\pi(1)} \sqcup \cdots \sqcup s_{\pi(n)} = s_1 \sqcup \cdots \cdots s_n
+  s_{\pi(1)} \sqcup \cdots \sqcup s_{\pi(n)} = s_1 \sqcup \cdots \sqcup s_n
 \]
 which follows from the fact that $\sqcup$ is commutative. This can be shown
 inductively on the number of updates, $n$, given the commutativity of $\sqcup$.
@@ -445,10 +446,10 @@ above. Like a state-based \CRDT, $\delta$-state based \CRDTs have both internal
 states and message payloads that form a join semi-lattice. This endows the
 $\delta$-state \CRDT with a commutative, associative, and idempotent \emph{join}
 operator, as before. Likewise, this means that the $\delta$-state \CRDT supports
-weak delivery semantics, such as delayed, dropped,\footnote{In this thesis, we
-consider dropped messages as having been delayed for an infinite amount of time,
-allowing us to reason about a smaller set of delivery semantics.} reordered,
-and duplicated message delivery.
+relaxed delivery semantics, such as delayed, dropped,\footnote{In this thesis,
+we consider dropped messages as having been delayed for an infinite amount of
+time, allowing us to reason about a smaller set of delivery semantics.}
+reordered, and duplicated message delivery.
 
 Unlike a state-based \CRDT, however, $\delta$-state \CRDTs do not send their
 internal state $s^k$ after an update at time $k-1$. We require that these states
@@ -462,9 +463,9 @@ set.
 
 This means that:
 \begin{itemize}
-  \item $\delta$-state \CRDTs support the same weak requirements from the network
-    as ordinary state-based \CRDTs. That is, they support dropping, duplicating,
-    reordering, and delaying of messages.
+  \item $\delta$-state \CRDTs support the same weak requirements from the
+    network as ordinary state-based \CRDTs. That is, they support dropping,
+    duplicating, reordering, and delaying of messages.
   \item $\delta$-state \CRDTs have similarly low-overhead of message size as
     op-based \CRDTs.
 \end{itemize}

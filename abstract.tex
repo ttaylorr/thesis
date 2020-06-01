@@ -16,7 +16,7 @@ information to be exchanged, they demand relatively strong network guarantees
 (exactly-once message delivery), and state-based \CRDTs suffer the opposite
 problem. Both satisfy \textit{strong eventual consistency} (\SEC).
 
-We posit that $\delta$-\CRDTs both (1) require less communication overhead
+We posit that $\delta$-state \CRDTs both (1) require less communication overhead
 from payload size, and (2) tolerate relatively weak network environments, making
 them an ideal candidate for real-world use of \CRDTs. Our central intuition is
 that state-based \CRDTs are equivalent to op-based \CRDTs when the operation is
