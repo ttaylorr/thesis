@@ -2,23 +2,22 @@
 \label{chap:crdt-reductions}
 
 This chapter outlines a key component of our proof strategy, which is a pair of
-reductions that allow us to view state-based \CRDTs as a refinement of op-based
-\CRDTs, and $\delta$-state \CRDTs as a refinement of state-based ones.
+reductions that allow us to view state- and $\delta$-state based \CRDTs as
+refinements of op-based \CRDTs.  The first reduction serves as a standard
+example of how to convert between \CRDT variants. The latter reduction is used
+in and guides our mechanized proofs discussed in
+Chapter~\ref{chap:example-crdts}.
 
 Specifically, we will discuss the following:
 \begin{itemize}
   \item In Section~\ref{sec:state-as-op}, we will describe a mapping $\phi$ to
     view state-based \CRDTs in terms of their op-based counterparts.
-  \item In Section~\ref{sec:delta-as-state}, we will note a key similarity
-    between state- and $\delta$-state based \CRDTs and introduce a class
-    \emph{generalized state-based \CRDTs}. This intuition will allow us to use
-    $\phi$ to reason about $\delta$-state \CRDTs in terms of op-based \CRDTs.
+  \item In Section~\ref{sec:delta-as-op}, we will describe a mapping $\phi$
+    to view $\delta$-state \CRDTs in terms of their op-based counterparts.
 \end{itemize}
 
-In this section, we will identify and discuss the two key intuitions which guide
-the remainder of our proof strategy. We'll refer to these intuitions as
-``maxims.'' They are stated here in brief, but we will return to them in
-Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-state}.
+We state these reductions as ``maxims''. They are stated here in brief, but we
+will return to them in Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-op}.
 
 \begin{maxim}
   \label{maxim:state-as-op}
@@ -28,9 +27,10 @@ Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-state}.
 \end{maxim}
 
 \begin{maxim}
-  \label{maxim:delta-as-state}
-  A $\delta$-state based \CRDT is a state-based \CRDT which is allowed to send
-  messages which do not reflect the entirety of its current state.
+  \label{maxim:delta-as-op}
+  A $\delta$-state based \CRDT is an op-based \CRDT whose messages are
+  $\delta$-fragments, and whose operation is a pseudo-join between the current
+  state and the $\delta$ fragment.
 \end{maxim}
 
 \section{state-based \CRDTs as op-based}
@@ -106,6 +106,7 @@ query function $q$ is defined in terms of the state-space, $S$, we let $\phi$
 preserve the implementation of $q$ under the mapping, too.
 
 \subsection{Mapping updates under $\phi$}
+\label{sec:states-under-phi}
 Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
 address the implementation of $u$ and $m$ under mapping. Our guiding principle
 is the following theorem (which we state and discuss here, but have not
@@ -155,66 +156,113 @@ states. We restate this Maxim for clarity:
   states.
 \end{maxim}
 
-\section{Generalized state-based \CRDTs}
-While it would be convenient to be able to map $\delta$-state \CRDTs to
-state-based \CRDTs identically, this is not possible. Specifically, it elides
-the key benefit of using $\delta$-state \CRDTs over pure state-based \CRDTs,
-which is the reduced payload size in $\delta$-state \CRDTs.
+\section{$\delta$-state based \CRDTs as op-based}
+\label{sec:delta-as-op}
 
-To address this, we propose a new \emph{class} of state-based \CRDTs,
-encompassing both the state- and $\delta$-state variants, which we refer to as
-\emph{generalized state-based \CRDTs}. Like usual, we define a general
-state-based \CRDT to be a $5$-tuple $(S, s^0, q, u, m)$, where all elements
-except $u$ are defined identically to traditional state-based \CRDTs.
+In the previous section, we described a general procedure for converting
+state-based \CRDTs into op-based \CRDTs. In this section, we treat the insight
+in the previous section as guidance for how to design a similar reduction to
+convert $\delta$-state \CRDTs into op-based \CRDTs. We will use this reduction
+to encode $\delta$-state \CRDTs into the library presented in~\citet{gomes17} in
+order to verify that $\delta$-state \CRDTs are \SEC.
 
-Unlike traditional state-based \CRDTs, however, $u$ does \emph{not} cause the
-\CRDT to send its full state after an update. Instead, $u$ returns \emph{any}
-state in the lattice $s$ so long as $s \sqsubseteq s^t$, where $s^t$ is the
-current state.
-
-Immediately, we can observe that traditional state-based \CRDTs are members of
-the class of generalized state-based \CRDTs. This follows from the fact that
-after updating to state $s^t$, they send their full state, and $s^t \sqsubseteq
-s^t$.
-
-\section{$\delta$-state based \CRDTs as general state-based \CRDTs}
-\label{sec:delta-as-state}
-Now that we have both a procedure for representing a state-based \CRDT as an
-equivalent op-based \CRDT under the mapping $\phi$, and a generalized class of
-state-based \CRDTs, we only need to discover a similar such mapping from a
-$\delta$-state to generalized state-based \CRDT.  Then, composing the two allows
-us to obtain:
+Similarly as in the previous section, we are interested in finding a mapping
+$\phi_{\delta \to \text{op}}$ of type:
 \[
-  \phi_{\delta \to \text{op}} =
-    \phi_{\text{state} \to \text{op}} \circ
-    \phi_{\delta \to \text{state}}
+  \phi_{\delta \to \text{op}} :
+    \underbrace{(S, s^0, q, u^\delta, m^\delta)}_{\text{$\delta$-based \CRDTs}}
+    \longrightarrow
+    \underbrace{(S, s^0, q, t, u, P)}_{\text{op-based \CRDTs}}
 \]
-Luckily, the mapping $\phi_{\delta \to \text{state}}$ (which we now refer to
-as $\phi$ out of convenience, disambiguating where necessary) is identity.
-This brings us to Maxim~\ref{maxim:delta-as-state}, which we restate here for
-clarity:
 
+For the same reasons as in Section~\ref{sec:states-under-phi}, we let $\phi$
+preserve the state space, initial state, and query function. Again, we also let
+$P$ be the delivery precondition which is always met (since messages exchanged
+are idempotent, and so there is no need to preserve either causality or
+at-most-once delivery as is traditional).
+
+In Section~\ref{sec:state-as-op}, we treated a state-based \CRDT's state as
+the representation of the effect for an operation-based \CRDT. In this section,
+we do the same for the \emph{$\delta$-state fragment}, which we naturally think
+as a difference of two states.
+
+Concretely, let $t : S \to S \to T$ for some type $T$ not necessarily equal to
+$S$ which represents the type of all $\delta$-fragments. We define two examples
+as follows:
+\begin{itemize}
+  \item For the G-Set \CRDT, the $\delta$ mutator, $m^\delta$ produces the
+    singleton set containing the element added in the last operation. Since only
+    one item can be added at a time, computing the following with the before-
+    and after-states is sufficient to generate the representation:
+    \[
+      t = \lambda s_1, s_2.\, s_2 \setminus s_1
+    \]
+    where $S = T = \mathcal{P}(\mathcal{X})$. This is an example where the \CRDT
+    has a type where both the state- and $\delta$-state fragments are members of
+    $S$.
+  \item For the G-Counter \CRDT, the $\delta$ mutator produces a pair
+    type containing the identifier of a node with a changed value, and the new
+    value which is assigned to that identifier. $t$ is defined as:
+    \[
+      t = \lambda s_1, s_2.\, \min_{\substack{i \in \mathcal{I} \\ s_1[i] \ne
+        s_2[i]}} (i, s_2[i])
+    \]
+    (Observe that this function is not defined for two states $s_1 = s_2$, nor
+    does it need to be, since the before- and after states are guaranteed to be
+    different after invoking $u^\delta$).
+
+    Here we have an example of $T \ne S$, where $T$ instead equals
+    $\isacharprime\isa{id} \times \mathbb{N}$.
+\end{itemize}
+
+$t$ is now capable of generating the $\delta$-state fragment corresponding to
+any pair of states from before and after and invocation of $u^\delta$. Now we
+need to define the op-based \CRDT's implementation of $u$ to recover a new state
+given a value of type $T$. Here, let $u : S \to T \to S$, which takes in a
+current state as well as a $\delta$-fragment and produces a new state.
+
+Intuitively, $u$ is a sort of inverse over the last argument and return value of
+$t$. That is, where $t$ was taking the difference of two states, $u$ recovers
+that difference into a new state. We define two example implementations of $u$
+as follows:
+\begin{itemize}
+  \item For the G-Set \CRDT, the new state is recovered by taking the union of
+    the current state, along with the state carrying the new item. That is:
+    \[
+      u = \lambda s, t.\, s \cup t
+    \]
+  \item For the G-Counter \CRDT, the new state is recovered by taking the old
+    state, and replacing the entry whose index is equal to the first part of an
+    update with the value described by the second part of that update.
+\end{itemize}
+
+Importantly, $u$ and $t$ needs to satisfy three important properties:
+\begin{enumerate}
+  \item $u$ and $t$ can never work together to produce a state which is not
+    by either the current state, or the $\delta$-fragment. That is, for any
+    state $s'$, we must have that:
+    \[
+      \forall s \sqsubseteq s'.\, u(s, t(s, s')) \sqsubseteq s'
+    \]
+    Or in other words, if our starting state is lower in the lattice than $s'$,
+    taking the $\delta$-fragment between $s$ and $s'$ and then re-applying that
+    to $s$ cannot produce a new state which is $\sqsupseteq s'$.
+  \item At all times, all replicas must reflect all updates performed at that
+    replica.
+  \item All replicas which have received the same set of messages have the same
+    state.
+\end{enumerate}
+
+Together, these properties are sufficient to re-introduce
+Maxim~\ref{maxim:delta-as-op}, which we restate here for clarity:
 \setcounter{maxim}{1}
 \begin{maxim}
-  All $\delta$-state based \CRDTs are generalized state-based \CRDTs.
+  A $\delta$-state based \CRDT is an op-based \CRDT whose messages are
+  $\delta$-fragments, and whose operation is a pseudo-join between the current
+  state, and the $\delta$ fragment.
 \end{maxim}
 
-This is a crucial property of $\delta$-state \CRDTs that we reason about now. Any
-$\delta$-state \CRDT has a state-space which describes a lattice, just like
-state-based \CRDTs. Likewise, they have query, update, and merge functions. The
-only difference between state- and $\delta$-state \CRDTs is that the
-\emph{communicated} state is a \emph{fragment} of the overall state. Crucially,
-these fragments are themselves part of the lattice $S$, which makes them
-suitable for sending around and reasoning about as identically to state-based
-\CRDTs, and thus they are generalized state-based \CRDTs.
-
 Therefore, we have a straightforward procedure for reasoning about
-$\delta$-state \CRDTs in terms of op-based \CRDTs, which is the following:
-\begin{enumerate}
-  \item Convert a $\delta$-state \CRDT into a state-based \CRDT by applying
-    $\phi_{\delta \to \text{state}}$.
-  \item Convert that state-based \CRDT into an op-based \CRDT by applying
-    $\phi_{\text{state} \to \text{op}}$.
-  \item Reason about the resulting op-based \CRDT using the existing framework
-    and implementation.
-\end{enumerate}
+$\delta$-state \CRDTs in terms of op-based \CRDTs, which is to convert any
+$\delta$-state \CRDT into an op-based \CRDT, and then use the existing framework
+of~\citet{gomes17} to mechanize that that \CRDT does or does not achieve \SEC.

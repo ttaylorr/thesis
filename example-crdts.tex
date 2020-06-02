@@ -489,7 +489,7 @@ that $\delta$-state based \CRDT equivalents of the G-Counter and G-Set are also
 inhabitants of the \SEC locale.
 
 This follows simply from construction and our reductions. Recall our statement
-in Maxim~\ref{maxim:delta-as-state} that all $\delta$-state \CRDTs are
+in Maxim~\ref{maxim:delta-as-op} that all $\delta$-state \CRDTs are
 themselves generalized-state based \CRDTs, only with additional restriction on
 what states are sent to other replicas. All that suffices to show is that
 restricted executions of the datatype--that is, ones in which only
@@ -505,7 +505,7 @@ $\delta$-state \CRDTs as op-based \CRDTs, and the fact that all $\delta$-based
 Since we have verified our \CRDTs as inhabiting the \SEC locale over all
 possible operations, we produced proofs for $\delta$-state \CRDTs as a
 side-effect of our strategy in Maxims~\ref{maxim:state-as-op}
-and~\ref{maxim:delta-as-state}.
+and~\ref{maxim:delta-as-op}.
 
 We devote the remainder of this section to stating the types of the
 operation-producing functions for the $\delta$-based \CRDT equivalents of the
@@ -559,7 +559,7 @@ Finally, we turn our attention to the remaining \CRDT instance: the G-Set.
 Similar to our experience verifying the $\delta$-based G-Counter, the
 specification of the \CRDT itself is identical to the original encoding in
 Section~\ref{sec:state-gset}, following our intuition in
-Maxim~\ref{maxim:delta-as-state}.
+Maxim~\ref{maxim:delta-as-op}.
 
 For completeness, we present the full instantiation of this type (again leaving
 the additional proofs to the Appendix in Section~\ref{sec:app-delta-gset}):
@@ -590,14 +590,14 @@ direct proof of this fact.
 
 In this Section, we discuss an alternative encoding in Isabelle of
 $\delta$-state \CRDTs. Our key insight following
-Maxim~\ref{maxim:delta-as-state} is that in a system where the proofs are done
+Maxim~\ref{maxim:delta-as-op} is that in a system where the proofs are done
 inductively over state transitions, all executions which only exchange
 $\delta$-fragments are implicitly verified. That is, since these messages
 comprise a subset of the set of messages which are sent by state-based \CRDTs,
 our inductive hypothesis still holds, and the result is preserved for
 $\delta$-state \CRDTs.
 
-But the key restriction in Maxim~\ref{maxim:delta-as-state} is that
+But the key restriction in Maxim~\ref{maxim:delta-as-op} is that
 $\delta$-state \CRDTs are ordinarily allowed to send only \emph{fragments} of
 their state, not the entire state.\footnote{This restriction does not hold for
 certain anti-entropy algorithms which are implemented on top of $\delta$-based
@@ -747,7 +747,7 @@ relaxed network model.
 
 We then reasoned that our state-based example \CRDTs in fact establish the same
 goal for $\delta$-state \CRDTs without additional modification, according to our
-result in Maxim~\ref{maxim:delta-as-state}. Finally, we presented an alternate
+result in Maxim~\ref{maxim:delta-as-op}. Finally, we presented an alternate
 encoding which restricts the set of messages nodes are allowed to send together,
 which more closely approximates the set of messages that $\delta$-\CRDTs are
 allowed to send, and again proved that this encoding is an inhabitant of \SEC.
