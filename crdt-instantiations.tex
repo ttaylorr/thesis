@@ -60,39 +60,7 @@ definition:
 \end{figure}
 
 Notice that the state space $\mathbb{N}^{|\mathcal{I}|}_0$ does not match the
-return type of the query function, $q$, which is simply $\mathbb{N}_0$. One way
-to understand this is to consider what might happen to certain interleavings of
-updates using this state-space. Consider the following incorrect example, which
-illustrates why the state-based G-Counter does not use a scalar state:
-
-\begin{example}
-  \label{example:vector-state-counter}
-  Suppose we have two replicas, $r_1$ and $r_2$, and consider the following
-  sequence of events:
-
-  \begin{figure}[H]
-    \centering
-    \includegraphics[width=.5\textwidth]{figures/scalar-state.pdf}
-    \caption{An (invalid) execution of scalar-based state G-Counters exchanging
-      updates.}
-  \end{figure}
-
-  \begin{enumerate}
-    \item Initially, $q(r_1) = q(r_2) = 0$. Suppose next that one update is
-      issued at each replica concurrently. That is, at the same time, we run
-      both $u(r_1)$ and $u(r_2)$ so that $q(r_1) = q(r_2) = 1$.
-    \item Then, each replica sends its state to the other where it is joined
-      with the current state. Here, $r_1$ tells $r_2$ that its state is $1$,
-      which $r_2$ joins with its own state, also $1$.
-  \end{enumerate}
-
-  Since $\sqcup$ is idemopotent, the state at both replicas remains $1$ until
-  further updates are issued. This does not reflect the overall state: without
-  further updates, $q(r_1)$ which equals $q(r_2)$ should equal $2$, not $1$.
-\end{example}
-
-Example~\ref{example:vector-state-counter} demonstrates the need for a
-vector-based counter, or, at least the need for a non-scalar value. In
+return type of the query function, $q$, which is simply $\mathbb{N}_0$. In
 Figure~\ref{fig:state-gcounter}, we utilize a \emph{vector} counter, which
 should be familiar to readers acquainted with \emph{vector
 clocks}~\citep{lamport78}.\footnote{Unlike traditional vector clocks, the vector
@@ -200,9 +168,10 @@ G-Counter. We begin first by presenting its full definition:
 \end{figure}
 
 It is worth mentioning the extreme levels of similarity it shares with its
-state-based counterpart. Like the state-based G-Counter, the $\delta$-state based
-G-Counter uses the state-space $\mathbb{N}^{|\mathcal{I}|}_0$, and has $s^0 = 0$.
-Its query operation and merge are defined identically.
+state-based counterpart. Like the state-based G-Counter, the $\delta$-state
+based G-Counter uses the state-space $\mathbb{N}^{|\mathcal{I}|}_0$, and has
+$s^0 = [0, 0, \cdots, 0]$. Its query operation and merge are defined
+identically.
 
 However, unlike the state-based G-Counter, the $\delta$-state based G-Counter
 implements the update function as $\lambda s,i.\, \{ i \mapsto s(i) + 1\}$. That
