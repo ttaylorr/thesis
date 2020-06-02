@@ -1,0 +1,80 @@
+\ifdefined\handout
+  \documentclass[aspectratio=169,compress,handout]{beamer}
+\else
+  \documentclass[aspectratio=169,compress]{beamer}
+\fi
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[square,sort,comma,numbers]{natbib}
+\usepackage{xcolor}
+\usepackage{xspace}
+
+\newcommand*{\TODO}[1][]{\text{\color{red} TODO {#1}}}
+
+\newcommand*{\CRDT}{\textsf{CRDT}\xspace}
+\newcommand*{\CRDTs}{\textsf{CRDTs}\xspace}
+\newcommand*{\CC}{\textsf{CC}\xspace}
+\newcommand*{\EC}{\textsf{EC}\xspace}
+\newcommand*{\SEC}{\textsf{SEC}\xspace}
+
+\setbeamercovered{transparent}
+
+
+\bibliography{bibliography.bib}
+
+\title{Verifying Strong Eventual Consistency in $\delta$-\CRDTs}
+\author{Taylor Blau}
+\institute{University of Washington}
+\date{June 2020}
+
+\begin{document}
+  \frame{\titlepage}
+
+  \begin{frame}
+    \frametitle{Contributions}
+
+    This thesis:
+    \begin{itemize}[<+->]
+      \item Mechanized proofs in Isabelle that two $\delta$-state \CRDTs inhabit
+        \SEC.
+        \begin{itemize}
+          \item Reuse a library for verifying operation-based \CRDTs of Gomes to
+            reason about $\delta$-state \CRDTs.
+          \item Weaken the network model of Gomes' to support duplicated
+            messages.
+        \end{itemize}
+      \item Two reductions that allow us to reason about $\delta$-state \CRDTs
+        in terms of operation-based \CRDTs.
+      \item Two encodings of the latter reduction.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{This talk}
+
+    \begin{itemize}[<+->]
+      \item Why distributed systems?
+      \item Consistency models: classic approaches and relaxed approximations.
+      \item \CRDTs: operation-, state- and $\delta$-state based, and the
+        trade-offs each makes.
+      \item Reductions between \CRDT variants.
+      \item Mechanized proofs in two encodings.
+      \item Conclusion.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    Why distributed systems?
+    \begin{enumerate}
+      \item \emph{Resiliency}. Tolerates failure of any one (or more)
+        participants.
+      \item \emph{Scalability}. Meeting the demands of an increased workload as
+        simple as adding more hardware.
+      \item \emph{Locality}. Service requests to varied locations by placing
+        hardware close to where requests originate.
+    \end{enumerate}
+  \end{frame}
+\end{document}
