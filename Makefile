@@ -76,7 +76,14 @@ thesis.pdf : thesis.tex thesis.cls $(SECTIONS) $(FIGURES) $(ISABELLE_STY)
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 
 figures/%.pdf : figures/%.tex
-	pdflatex -output-directory $(dir $@) $<
+	pdflatex -output-directory $(dir $@) $
+
+arXiv.tar.gz : thesis.pdf classicthesis.sty
+	tar -czf $@ thesis.tex thesis.cls thesis.bib thesis.bbl $(FIGURES) \
+		isabelle.sty isabellesym.sty classicthesis.sty $(SECTIONS)
+
+classicthesis.sty :
+	curl http://ctan.math.washington.edu/tex-archive/macros/latex/contrib/classicthesis/classicthesis.sty > classicthesis.sty
 
 $(THEORY) : $(THEORIES)
 	$(ISABELLE) build -D src || true

@@ -15,8 +15,7 @@
 \ifdefined\forprint
 \RequirePackage{geometry}
 \hypersetup{hidelinks}
-\fi
-\ifdefined\forweb
+\else
 \RequirePackage[margin=1.25in]{geometry}
 \hypersetup{%
   pdfborder={0 0 0},colorlinks=true,citecolor=purple,linkcolor=violet
