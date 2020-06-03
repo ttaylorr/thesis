@@ -96,9 +96,6 @@ distributed consensus:
   \end{enumerate}
 \end{definition}
 
-We summarize the two most popular and often-implemented algorithms for
-distributed consensus~\citep{howard20}:
-
 The two most popular algorithms in this field are Paxos and
 Raft~\citep{howard20,lamport98,ongaro14}. Both algorithms implement a
 distributed state-machine replication and can be used to implement linearizable
@@ -107,8 +104,8 @@ in practice~\citep{howard20}. The topics often appear in undergraduate-level
 courses in Distributed Systems, and have been the subject of extensive
 verification effort to date~\citep{wilcox15}. Often, these distributed systems
 verification efforts require an enormous amount of effort.  In a companion
-paper~\citet{woos16} uses 45,000 lines to verify the complete Raft protocol in
-their system.
+paper~\citet{woos16} use on the order of 45,000 lines of proof scripts to verify
+the complete Raft protocol in their system.
 
 It is natural to ask what is the property of these systems that makes them
 difficult to implement or reason about correctly in practice. One possible
@@ -125,11 +122,10 @@ practice, and are substantially easier to reason about.
 
 \section{Consistency Guarantees}
 \CRDTs are said to attain a weaker form of consistency known as \emph{strong
-eventual consistency} (hereafter, \SEC)~\citep{shapiro11}. \SEC is a refinement
-of \emph{eventual consistency} (\EC). Informally, \EC says that reads from a
-system eventually return the same value at all replicas, while \SEC says that if
-any two nodes have received the same set of updates, they will be in the same
-state.
+eventual consistency}~\citep{shapiro11}. \SEC is a refinement of \emph{eventual
+consistency} (\EC). Informally, \EC says that reads from a system eventually
+return the same value at all replicas, while \SEC says that if any two nodes
+have received the same set of updates, they will be in the same state.
 
 \EC and the \SEC extension are natural answers to the question we pose in
 Section~\ref{sec:dca-safety}. That is, we posit that it is the safety
@@ -171,6 +167,10 @@ properties~\citep{shapiro11}:
   \item \emph{Termination}. All method executions terminate.
 \end{enumerate}
 
+(For readers unfamiliar with modal logic notation, we use $\Diamond$ to precede
+a logical statement that is true at \emph{some} time, whereas we use $\square$
+to precede a logical statement that is true at \emph{all} times.)
+
 \EC is a relatively weak form of consistency. In~\citet{shapiro11}, it is
 observed that \EC systems will sometimes execute an update immediately only to
 discover that it produces a conflict with some future update, and so frequent
@@ -194,13 +194,13 @@ messages. In this case, it \emph{is} possible that a replica will receive some
 update, attempt to propagate it to other replicas, only for them to never be
 delivered.
 
-To resolve this conflict in practice, one of two approaches if often taken. In
-the first approach, we assume a fair-loss network~\citep{cachin11} in which each
+To resolve this conflict in practice, one of two approaches is often taken. In
+the first approach, assume a fair-loss network~\citep{cachin11} in which each
 message has a non-zero probability of being delivered. To ensure that messages
 are delivered, each node sends each message an infinite number of times over the
 network, such that it will be delivered an infinite number of times. This
 resolves the eventual delivery problem since we assumed a sufficient (but
-weaker) condition of the underlying network, and then showed that we can
+weaker) condition of the underlying network, and then showed it is possible to
 implement eventual delivery on top of these network semantics.
 
 In the second approach, we first consider a set of delivery semantics $P$ which
@@ -275,6 +275,8 @@ $s = s^m \sqcup s^n$ is given as:
 In other words, a $s = s^m \sqcup s^n$ is a least upper-bound of $s^m$ and $s^n$
 if it is the smallest element that is at least as large as both $s^m$ and $s^n$.
 
+\subsection{Merging states}
+
 For now, we set aside $q$ and $u$, and turn our attention towards the merging
 function $m$. $m$ resolves the states of two \CRDTs into a new state, which is
 then assigned at the replica performing the merge. Given a suitable set of
@@ -290,7 +292,7 @@ which contains its current state, is carried on continually, and $m$ is
 invoked whenever a new state is received. That is, each replica is evolving
 over time in response to outside instruction, and in turn these updates cause
 internal state transitions, which themselves cause those new states to be
-broadcasted and eventually joined at every other replica.
+broadcast and eventually joined at every other replica.
 
 The $\sqcup$ operator has three mathematical properties that make it an
 appealing choice for joining states together as in $m$. These are its
@@ -317,6 +319,7 @@ That is, it does not matter which of two updates from another replica arrives
 first, because the result is the same no matter in which order they are
 delivered.
 
+\paragraph{Commutativity}
 For concreteness, say that we have two replicas, $r_1$ and $r_2$. $r_1$
 initially begins at state $s$, and $r_2$ progresses through states $s_1, \ldots,
 s_n$ for $n > 0$. We then see that it does not matter the order in which these
@@ -333,6 +336,7 @@ for any choice of $\pi$, because
 which follows from the fact that $\sqcup$ is commutative. This can be shown
 inductively on the number of updates, $n$, given the commutativity of $\sqcup$.
 
+\paragraph{Idempotency}
 Next, it is often common for packets to be duplicated in transit over a network.
 That is, even though a packet may be sent from a source only once, it may be
 received by a recipient on the same network multiple times. For this, the
@@ -342,6 +346,7 @@ tolerate that set of messages, because it only requires the message to be
 delivered once. Any additional duplicates are merged in without changing the
 state.
 
+\paragraph{Associativity}
 Finally, associativity is an appealing property, too, although its applications
 are both less immediate and less often-used in this thesis. Suppose that several
 replicas of a state-based \CRDT reside on a network with, say, high latency, or
@@ -357,15 +362,12 @@ other replicas by first folding $\sqcup$ over it and sending a single update.
 \section{op-based \CRDTs}
 \label{sec:op-based-crdts}
 
-Operation-based (op-based) \CRDTs, like their state-based counterparts have
-internal states that form a semi-lattice. However, their communication styles
-differ fundamentally: op-based \CRDTs communicate \textit{operations} that
-indicate a kind of update to be applied locally, instead of the \textit{result}
-of that update (as is the case in state-based \CRDTs).
-
-This section discusses the original op-based \CRDTs and pays brief attention to
-some newer specifications such as \textit{pure op-based \CRDTs}~\citep{shapiro11,
-baquero17}.
+Operation-based (op-based) \CRDTs evolve their internal states over time, but
+these states need not necessarily form a semi-lattice.  Likewise, the
+communication style of op- and state-based \CRDTs differ fundamentally: op-based
+\CRDTs communicate \textit{operations} that indicate a kind of update to be
+applied locally, instead of the \textit{result} of that update (as is the case
+in state-based \CRDTs).
 
 An op-based \CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$. As in
 Section~\ref{sec:state-based-crdts}, $S$, $s^0$, and $q$, retain their
@@ -379,16 +381,14 @@ is made by a caller (say, for example, incrementing the value of an op-based
   \item First, the \textit{prepare-update} implementation $t$ is applied at the
     replica receiving the update. $t$ is side-effect free, and prepares a
     representation of the operation about to take place.
-  \item Next, the \textit{effect-update} implementation $u$ is applied at the
-    local replica if and only if the delivery precondition $P$ is met, causing
-    the desired update to take effect. $P$ is interpreted
+  \item Then, the \textit{effect-update} implementation $u$ is applied at the
+    local and remote replicas if and only if the delivery precondition $P$ is
+    met, causing the desired update to take effect. $P$ is interpreted
     temporally~\citep{shapiro11}, and is a precondition on whether or not
     operations necessary to process the \emph{current} operation have already
     been incorporated into the \CRDT's state. $P$ is traditionally assumed to be
     disabled until all messages which happened before the current message have
     been delivered, preserving causality.
-  \item Finally, the representation from $t$ is sent to all other replicas, at
-    which point they, too, apply the representation of the effect using $u$.
 \end{enumerate}
 
 This is the critical distinction between op- and state-based CRDTS:
@@ -425,7 +425,7 @@ applying them in either order is the same. That is, $s \circ u \circ u' \equiv s
 
 They claim that having commutativity for concurrent operations as well as an
 in-order delivery relation $P$ for comparable updates is sufficient to prove
-that op-based \CRDTs achieve Strong Eventual Consistency.
+that op-based \CRDTs achieve \SEC.
 
 \section{$\delta$-state \CRDTs}
 In this section, we describe the refinement of \CRDTs that is the interest and
