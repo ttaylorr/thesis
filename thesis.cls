@@ -63,6 +63,15 @@
 \newcommand*{\EC}{\textsf{EC}\xspace}
 \newcommand*{\SEC}{\textsf{SEC}\xspace}
 
+\def\isadelimtheory{}\def\endisadelimtheory{}
+\def\isatagtheory{}\def\endisatagtheory{}
+\def\isadelimML{}\def\endisadelimML{}
+\def\isatagML{}\def\endisatagML{}
+\def\isafoldML{}
+\def\isadelimproof{}\def\endisadelimproof{}
+\def\isatagproof{}\def\endisatagproof{}
+\def\isafoldproof{}
+
 \makeatletter
 \def\@maketitle{%
   \newpage
