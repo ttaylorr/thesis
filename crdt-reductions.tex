@@ -3,17 +3,18 @@
 
 This chapter outlines a key component of our proof strategy, which is a pair of
 reductions that allow us to view state- and $\delta$-state based \CRDTs as
-refinements of op-based \CRDTs.  The first reduction serves as a standard
+refinements of op-based \CRDTs. The first reduction serves as a standard
 example of how to convert between \CRDT variants. The latter reduction is used
-in and guides our mechanized proofs discussed in
-Chapter~\ref{chap:example-crdts}.
+in and guides our mechanized proofs (Chapter~\ref{chap:example-crdts}).
 
 Specifically, we will discuss the following:
 \begin{itemize}
-  \item In Section~\ref{sec:state-as-op}, we will describe a mapping $\phi$ to
-    view state-based \CRDTs in terms of their op-based counterparts.
-  \item In Section~\ref{sec:delta-as-op}, we will describe a mapping $\phi$
-    to view $\delta$-state \CRDTs in terms of their op-based counterparts.
+  \item In Section~\ref{sec:state-as-op}, we will describe a mapping
+    $\phi_{\text{state} \to \text{op}}$ to reduce state-based \CRDTs to op-based
+    \CRDTs.
+  \item In Section~\ref{sec:delta-as-op}, we will describe a mapping
+    $\phi_{\delta \to \text{op}}$ to reduce $\delta$-state \CRDTs to op-based
+    \CRDTs.
 \end{itemize}
 
 We state these reductions as ``maxims''. They are stated here in brief, but we
@@ -35,14 +36,11 @@ will return to them in Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-op}.
 
 \section{state-based \CRDTs as op-based}
 \label{sec:state-as-op}
-Our discussion begins by addressing the question of how we will use a library
-built to verify op-based \CRDTs to verify $\delta$-state \CRDTs. Our approach is
-to view the set of $\delta$-state \CRDTs as a refinement of the set of
-state-based \CRDTs, which are themselves in turn a refinement of the set of
-op-based \CRDTs. In other words, we view op-based \CRDTs as the \emph{most}
-expressive of the three categories of \CRDTs that we have discussed so far.
-Before discussing the latter correspondence, we'll first begin by relating op-
-and state-based \CRDTs to one another.
+
+This section describes a reduction from state-based \CRDTs to op-based \CRDTs.
+We describe this reduction to exemplify how to reduce between \CRDT classes, but
+this reduction is ultimately not used in our mechanized proofs, since we do not
+reason about state-based \CRDTs explicitly.
 
 Consider some state-based \CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
 set of states $S$, an initial state $s^0$, along with functions for querying the
@@ -55,19 +53,7 @@ follows:
     \underbrace{(S, s^0, q, t, u, P)}_{\text{op-based \CRDTs}}
 \]
 For our purposes, we view $\phi_{\text{state} \to \text{op}}$ as a homomorphism
-between state- and op-based \CRDTs. If we had such a structure-preserving
-transformation, then we would be able to verify any state-based \CRDT of our
-choosing using the framework from~\citet{gomes17} without modification to the
-framework. Then, the process for verifying a state-based \CRDT using the
-op-based framework looks as follows:
-\begin{enumerate}
-  \item Take a state-based \CRDT, say $C_s$, of interest for verification.
-  \item Convert the state-based \CRDT into an op-based one by computing:
-    \[
-      C_o = \phi_{\text{state} \to \text{op}}(C_s)
-    \]
-  \item Use $C_o$ as input to the verification tool.
-\end{enumerate}
+between state- and op-based \CRDTs.
 
 Note that $P$ (the delivery precondition on the right-hand side) is the only
 element which does not have a natural analog on the left-hand side.
@@ -79,7 +65,7 @@ delivery can always occur immediately on the right-hand side.
 We'll now turn to describing the details of $\phi_{\text{state} \to \text{op}}$,
 which for convenience in this section, we'll abbreviate as simply
 $\phi$.\footnote{In the following section, we'll define a new homomorphism
-between state- and $\delta$-state based \CRDTs, at which point we will
+between op- and $\delta$-state based \CRDTs, at which point we will
 distinguish between the two mappings when it is unclear which is being referred
 to.} To understand $\phi$, we'll consider how it maps the state $S$ (along with
 $s^0$ and $q$) separately from how it maps the update procedure $u$.
@@ -101,16 +87,16 @@ Section~\label{sec:example-gcounter}).
 In order to make $\phi$ a simple reduction, we allow the state spaces of the
 \CRDT before and after the reduction to be identical. Though \CRDT designers can
 often be more clever than this in practice, this makes reasoning about the
-transformation much simpler for the purposes of our proofs.  Likewise, since the
+transformation much simpler for the purposes of our proofs. Likewise, since the
 query function $q$ is defined in terms of the state-space, $S$, we let $\phi$
 preserve the implementation of $q$ under the mapping, too.
 
 \subsection{Mapping updates under $\phi$}
 \label{sec:states-under-phi}
-Now that we have mapped $S$, $s^0$, and $q$ under $\phi$, we still need to
-address the implementation of $u$ and $m$ under mapping. Our guiding principle
-is the following theorem (which we state and discuss here, but have not
-mechanized):
+Now that we have described the process by which $\phi$ maps $S$, $s^0$, and $q$,
+we still need to address the implementation of $u$ and $m$ under mapping. Our
+guiding principle is the following theorem (which we state and discuss here, but
+have not mechanized):
 \begin{theorem}
   Let $C_s$ be a state-based \CRDT with $C_s = (S, s^0, q, u, m)$. Define an
   op-based \CRDT $C_o$ as follows:
@@ -161,13 +147,13 @@ states. We restate this Maxim for clarity:
 
 In the previous section, we described a general procedure for converting
 state-based \CRDTs into op-based \CRDTs. In this section, we treat the insight
-in the previous section as guidance for how to design a similar reduction to
+from the previous section as guidance for how to design a similar reduction to
 convert $\delta$-state \CRDTs into op-based \CRDTs. We will use this reduction
 to encode $\delta$-state \CRDTs into the library presented in~\citet{gomes17} in
 order to verify that $\delta$-state \CRDTs are \SEC.
 
-Similarly as in the previous section, we are interested in finding a mapping
-$\phi_{\delta \to \text{op}}$ of type:
+Similarly as in the previous section, we describe a (new) mapping $\phi_{\delta
+\to \text{op}}$ of type:
 \[
   \phi_{\delta \to \text{op}} :
     \underbrace{(S, s^0, q, u^\delta, m^\delta)}_{\text{$\delta$-based \CRDTs}}
@@ -176,10 +162,10 @@ $\phi_{\delta \to \text{op}}$ of type:
 \]
 
 For the same reasons as in Section~\ref{sec:states-under-phi}, we let $\phi$
-preserve the state space, initial state, and query function. Again, we also let
-$P$ be the delivery precondition which is always met (since messages exchanged
-are idempotent, and so there is no need to preserve either causality or
-at-most-once delivery as is traditional).
+preserve the state space, initial state, and query function. Again, we let $P$
+be the delivery precondition which is always met (since messages exchanged are
+idempotent, and so there is no need to preserve either causality or at-most-once
+delivery as is traditional).
 
 In Section~\ref{sec:state-as-op}, we treated a state-based \CRDT's state as
 the representation of the effect for an operation-based \CRDT. In this section,
