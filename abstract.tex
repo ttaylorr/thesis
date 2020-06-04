@@ -6,23 +6,23 @@ where coordination overhead may not be tolerated, and individual participants
 are allowed to temporarily diverge from the overall computation.  Within this
 setting, there are two classical approaches: state- and operation-based \CRDTs.
 The former define a commutative, associative, and idempotent \textit{join}
-operation, and their states a \textit{monotone join semi-lattice}. These may be
-further distinguished into classical- and $\delta$-state
-\CRDTs. The former communicate their \emph{full} state after
-each update, whereas the latter communicate only the \emph{changed} state. On
-the other hand, op-based \CRDTs communicate \emph{operations} (not state), thus
-making these updates non-idempotent.  Whereas op-based \CRDTs require little
-information to be exchanged, they demand relatively strong network guarantees
-(exactly-once message delivery), and state-based \CRDTs suffer the opposite
-problem. Both satisfy \textit{strong eventual consistency} (\SEC).
+operation, and their states a \textit{monotone join semi-lattice}. State-based
+\CRDTs may be further distinguished into classical- and $\delta$-state \CRDTs.
+The former communicate their \emph{full} state after each update, whereas the
+latter communicate only the \emph{changed} state. Op-based \CRDTs communicate
+\emph{operations} (not state), thus making their updates non-idempotent.
+Whereas op-based \CRDTs require little information to be exchanged, they demand
+relatively strong network guarantees (exactly-once message delivery), and
+state-based \CRDTs suffer the opposite problem. Both satisfy \textit{strong
+eventual consistency} (\SEC).
 
 We posit that $\delta$-state \CRDTs both (1) require less communication overhead
 from payload size, and (2) tolerate relatively weak network environments, making
-them an ideal candidate for real-world use of \CRDTs. Our central intuition is
-that state-based \CRDTs are equivalent to op-based \CRDTs when the operation is
-a join of the state. We formalize this intuition in the Isabelle interactive
-theorem prover and show that state-based \CRDTs achieve \SEC. We present a
-relaxed network model in Isabelle and show that state-based \CRDTs still
-maintain \SEC. Finally, we extend our work to show that $\delta$-state \CRDTs
-maintain \SEC when only communicating $\delta$-state fragments, even under
-relatively weak network conditions.
+them an ideal candidate for real-world use of \CRDTs. Our central intuition is a
+pair of reductions between state-, $\delta$-state, and op-based \CRDTs. We
+formalize this intuition in the Isabelle interactive theorem prover and show
+that state-based \CRDTs achieve \SEC. We present a relaxed network model in
+Isabelle and show that state-based \CRDTs still maintain \SEC. Finally, we
+extend our work to show that $\delta$-state \CRDTs maintain \SEC when only
+communicating $\delta$-state fragments, even under relatively weak network
+conditions.

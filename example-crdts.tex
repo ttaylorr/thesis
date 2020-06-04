@@ -237,8 +237,8 @@ Example~\ref{example:state-op-dup-msgs} using the relaxed network model.
 Equipped with a relaxed network model, we are now ready to verify two examples
 of state-based \CRDTs.
 
-\subsection{State-based GCounter}
-We begin first with the GCounter, the formal definition of which can be found in
+\subsection{State-based G-Counter}
+We begin first with the G-Counter, the formal definition of which can be found in
 Section~\ref{sec:example-gcounter}. Following our intuition in
 Maxim~\ref{maxim:state-as-op}, we define a type to represent the $\isa{state}$ and
 $\isa{operation}$ of a state-based G-Counter, presented below:
@@ -273,7 +273,7 @@ which are defined to act over this type:
 
 \begin{figure}[H]
   \input{figures/theories/gcounter-misc}
-  \caption{Isabelle definitions for state-based GCounter-related functions.}
+  \caption{Isabelle definitions for state-based G-Counter-related functions.}
   \label{fig:gcounter-option-max}
 \end{figure}
 
@@ -290,8 +290,8 @@ the right-hand side of the mapping in $\isacharprime\isa{id}~\isa{state}$, and
 so this function is used to merge the state received from some other replica.
 We will prove some additional facts about this function shortly, but for now we
 interpret it as taking the maximum of two optional integers, where a present
-integer is always preferred over an absent one\footnote{That is, the maximum of
-$\isa{Some}~x$ and $\isa{None}$ is $\isa{Some}~x$.}, and the maximum of two
+integer is always preferred over an absent one,\footnote{That is, the maximum of
+$\isa{Some}~x$ and $\isa{None}$ is $\isa{Some}~x$.} and the maximum of two
 absent integers is $\isa{None}$.
 
 Now that we have a way to interpret the pair-wise maximum of two states which
@@ -407,7 +407,7 @@ Incidentally by this point, the proof that \SEC is inhabited by our encoding of
 the G-Counter \SEC is mostly automatic, up to giving Isabelle some hints about
 rewrite and simplification rules that it should apply.
 
-\subsection{State-based GSet}
+\subsection{State-based G-Set}
 \label{sec:state-gset}
 
 Now that we have verified a state-based G-Counter \CRDT, we turn our attention
@@ -488,13 +488,13 @@ We have reached the climax of this chapter in which we now set out to verify
 that $\delta$-state based \CRDT equivalents of the G-Counter and G-Set are also
 inhabitants of the \SEC locale.
 
-This follows simply from construction and our reductions. Recall our statement
-in Maxim~\ref{maxim:delta-as-op} that all $\delta$-state \CRDTs are
-themselves generalized-state based \CRDTs, only with additional restriction on
-what states are sent to other replicas. All that suffices to show is that
-restricted executions of the datatype--that is, ones in which only
-$\delta$-state fragments are sent, and not full state--still inhabit the \SEC
-locale.
+This follows simply from construction and our reductions. Recall the sentiment
+of our claim in Maxim~\ref{maxim:delta-as-op} that all $\delta$-state \CRDTs are
+themselves like the op-based equivalent of state-based \CRDTs, only with
+additional restriction on what states are sent to other replicas. All that
+suffices to show is that restricted executions of the datatype--that is, ones in
+which only $\delta$-state fragments are sent, and not full state--still inhabit
+the \SEC locale.
 
 Recall that, since our proofs reason about state transitions inductively, we
 have implicitly covered the case in which only $\delta$-fragments of state are
@@ -603,8 +603,8 @@ their state, not the entire state.\footnote{This restriction does not hold for
 certain anti-entropy algorithms which are implemented on top of $\delta$-based
 \CRDTs~\citep{almedia18}. This left to future work and discussed briefly in
 Section~\ref{sec:direct-delta-proofs}.} For our purposes, we devote the
-remainder of this section to exploring how this restriction might be encoded at
-the type level in our proofs in Isabelle.
+remainder of this section to exploring how this restriction is encoded at the
+type level in our proofs in Isabelle.
 
 The approach that we take here is to let the operation type be a type-level
 synonym for a sort of refinement type of the state. Consider for a brief example

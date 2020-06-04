@@ -16,14 +16,14 @@ of replicas, but we make this assumption for the simplicity of our formalism.
 \label{sec:example-gcounter}
 
 \subsection{State-based G-Counter}
-The G-Counter supports two very simple operations: \textsf{inc}, and query. When
-\textsf{inc} is invoked, the counter updates its internal state to increment the
-queried value by one. When query is invoked, the counter returns a number which
-represents the number of increment operations that have occurred globally in the
-system, for which the replica processing the query knows about. Note that this
-number is always at least as large as the number of times that \textsf{inc} has
-been invoked \textit{at that replica}, and never larger than the true value of
-times \textsf{inc} has been invoked globally.
+The G-Counter supports two very simple operations: \textsf{inc} (increment), and
+query. When \textsf{inc} is invoked, the counter updates its internal state to
+increment the queried value by one. When query is invoked, the counter returns a
+number which represents the number of increment operations that have occurred
+globally in the system, for which the replica processing the query knows about.
+Note that this number is always at least as large as the number of times that
+\textsf{inc} has been invoked \textit{at that replica}, and never larger than
+the true value of times \textsf{inc} has been invoked globally.
 
 This is our first example of \SEC, where replicas that are ``behind,'' i.e.,
 that have not received all updates from all other replicas, are not guaranteed
@@ -49,9 +49,9 @@ definition:
     \textsf{G-Counter}_s = \left\{\begin{aligned}
       S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
-      q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
-      u &: \lambda s,i. s\left\{ i \mapsto s(i) + 1 \right\} \\
-      m &: \lambda s_1, s_2. \left[ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+      q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+      u &: \lambda s,i.\, s\left\{ i \mapsto s(i) + 1 \right\} \\
+      m &: \lambda s_1, s_2.\, \left[ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
       \mathsf{dom}(s_2) \right]
     \end{aligned}\right.
   \]
@@ -92,7 +92,7 @@ all \textsf{inc} operations performed at other replicas. Replicas which are
 ``behind'' may ``catch up'' when they receive the set of undelivered messages.
 However, these replicas never are ``ahead'' of any other replica, i.e., they
 never receive a message which doesn't correspond to a single \textsf{inc}
-operation at some other replica.
+operation at some other replica, thus they need not be idempotent.
 
 We present now the full definition of the op-based G-Counter:
 
@@ -102,9 +102,9 @@ We present now the full definition of the op-based G-Counter:
     \textsf{G-Counter}_o = \left\{\begin{aligned}
       S &: \mathbb{N}_0 \\
       s^0 &: 0 \\
-      q &: \lambda s. s \\
+      q &: \lambda s.\, s \\
       t &: \textsf{inc} \\
-      u &: \lambda s,p. s + 1 \\
+      u &: \lambda s,p.\, s + 1 \\
     \end{aligned}\right.
   \]
   \caption{Specification of an op-based \textsf{G-Counter} \CRDT.}
@@ -134,9 +134,9 @@ closely mirror the state-space of its state-based counterpart, as follows:
     \textsf{G-Counter}_o' = \left\{\begin{aligned}
       S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: [ 0, 0, \cdots, 0 ] \\
-      q &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
+      q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
       t &: (\textsf{inc}, i)) \\
-      u &: \lambda s,p. s\{ i \mapsto s(i) + 1 \} \\
+      u &: \lambda s,p.\, s\{ i \mapsto s(i) + 1 \} \\
     \end{aligned}\right.
   \]
   \caption{Alternative specification of an op-based \textsf{G-Counter} \CRDT.}
@@ -158,9 +158,9 @@ G-Counter. We begin first by presenting its full definition:
     \textsf{G-Counter}_\delta = \left\{\begin{aligned}
       S &: \mathbb{N}_0^{|\mathcal{I}|} \\
       s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
-      q^\delta &: \lambda s. \sum_{i \in \mathcal{I}} s(i) \\
-      u^\delta &: \lambda s,i. \left\{ i \mapsto s(i) + 1 \right\} \\
-      m^\delta &: \lambda s_1, s_2. \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+      q^\delta &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+      u^\delta &: \lambda s,i.\, \left\{ i \mapsto s(i) + 1 \right\} \\
+      m^\delta &: \lambda s_1, s_2.\, \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
       \mathsf{dom}(s_2) \right\}
     \end{aligned}\right.
   \]

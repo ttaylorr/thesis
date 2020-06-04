@@ -3,31 +3,29 @@
 
 This chapter outlines the preliminary information necessary to contextualize the
 remainder of this thesis for readers unfamiliar with existing \CRDT research.
-Here we motivate conflict-free replicated datatypes (\CRDTs), formalize state-
-and op-based variants of \CRDTs, and present examples of common instantiations.
-Finally, we conclude with a discussion of the different levels of consistency
-guarantees that each \CRDT variant offers, and rationalize which levels of
-consistency are appealing in certain situations.
+Here we motivate \CRDTs, formalize their state- and op-based variants, and
+present examples of common instantiations. Finally, we conclude with a
+discussion of the different levels of consistency guarantees that each \CRDT
+variant offers, and rationalize which levels of consistency are appealing in
+certain situations.
 
 \section{Motivation}
-Conflict-free Replicated Datatypes (\CRDTs) are a way to store several copies of
-a data-structure on multiple computers which form a distributed system. Each
-participant in the system can make modifications to the datatype without
-the need for explicit coordination with other participants. \CRDT
-implementations are designed so that coordination-free updates which may
-conflict with one another always have a deterministic resolution. This allows
-multiple participants to query and modify their \emph{view} of the replicated
-datatype, without the traditional overhead and implementation burden that more
-stringent replication algorithms require.
+\CRDTs are a way to store several copies of a data-structure on multiple
+computers which form a distributed system. Each participant in the system can
+make modifications to the datatype without the need for explicit coordination
+with other participants. \CRDT implementations are designed so that
+coordination-free updates which may conflict with one another always have a
+deterministic resolution. This allows multiple participants to query and modify
+their \emph{view} of the replicated datatype, without the traditional overhead
+and implementation burden that more stringent replication algorithms require.
 
-Here, we'll discuss three variants of \CRDTs: state-based, op-based , and
+Here, we'll discuss three variants of \CRDTs: state-based, op-based, and
 $\delta$-state based. Each of these variants achieve a consistent value by the
 use of different message types, and each likewise requires a different set of
 delivery semantics. In this chapter, we identify $\delta$-state \CRDTs as
-achieving an appealing set of trade-offs among each of the four variants. We
-restate that they are able to achieve Strong Eventual Consistency (\SEC, the
-best reasonably-achievable consistency guarantee for most \CRDT applications)
-while maintaining both:
+achieving an appealing set of trade-offs among each of the three variants. We
+restate that they are able to achieve \SEC (the best reasonably-achievable
+consistency guarantee for most \CRDT applications) while maintaining both:
 \begin{itemize}
   \item A relatively small payload size, as is the benefit of op-based \CRDTs,
     and
@@ -59,9 +57,9 @@ conceptually treat a distributed system as a single unit of computation. That
 is, if all replicas maintain the same memory, it is conceptually as if one whole
 machine is being replicated many times.
 
-That being said, upholding this requirement is not a straightforward task. An
-immediate question arises which is: who coordinates when updates to a piece of
-data are replicated to other participants in the system? What happens when the
+That being said, upholding this requirement is not a straightforward task. Some
+question that arise are: who coordinates when updates to a piece of data are
+replicated to other participants in the system? What happens when the
 coordinator becomes unresponsive, or otherwise misbehaves? Who is responsible
 for electing a new participant to take over the coordination duties of the
 participant which was no longer able to fulfill them?
@@ -69,13 +67,13 @@ participant which was no longer able to fulfill them?
 \section{Distributed Consensus Algorithms}
 \label{sec:dca-safety}
 
-This gives rise to the area of consensus algorithms. Broadly speaking, a
-consensus algorithm is a routine which multiple participants follow in order to
-agree on a shared value.
+These questions give rise to the area of consensus algorithms. Broadly speaking,
+a consensus algorithm is a routine which multiple participants follow in order
+to agree on a shared value.
 
 We first state briefly the properties that an algorithm must have to solve
-distributed consensus:
-\begin{definition}[Distributed Consensus Algorithm, \citep{howard19}]
+distributed consensus from~\citet{howard19}:
+\begin{definition}[Distributed Consensus Algorithm]
   \label{def:consensus}
   An algorithm is said to solve distributed consensus if it has the following
   three safety requirements:
@@ -97,15 +95,15 @@ distributed consensus:
 \end{definition}
 
 The two most popular algorithms in this field are Paxos and
-Raft~\citep{howard20,lamport98,ongaro14}. Both algorithms implement a
-distributed state-machine replication and can be used to implement linearizable
-systems. Both of these systems are notoriously difficult to implement correctly
-in practice~\citep{howard20}. The topics often appear in undergraduate-level
-courses in Distributed Systems, and have been the subject of extensive
-verification effort to date~\citep{wilcox15}. Often, these distributed systems
-verification efforts require an enormous amount of effort.  In a companion
-paper~\citet{woos16} use on the order of 45,000 lines of proof scripts to verify
-the complete Raft protocol in their system.
+Raft~\citep{howard20,lamport98,ongaro14}. Each implements distributed
+state-machine replication and can be used to implement linearizable systems.
+Both of these systems are notoriously difficult to understand and implement
+correctly in practice~\citep{howard20}. The topics often appear in
+undergraduate-level courses in Distributed Systems, and have been the subject of
+extensive verification effort to date~\citep{wilcox15}. Often, these distributed
+systems verification efforts require an enormous amount of effort.  In a
+companion paper~\citet{woos16} use on the order of 45,000 lines of proof scripts
+to verify the complete Raft protocol in their system.
 
 It is natural to ask what is the property of these systems that makes them
 difficult to implement or reason about correctly in practice. One possible
@@ -198,7 +196,9 @@ To resolve this conflict in practice, one of two approaches is often taken. In
 the first approach, assume a fair-loss network~\citep{cachin11} in which each
 message has a non-zero probability of being delivered. To ensure that messages
 are delivered, each node sends each message an infinite number of times over the
-network, such that it will be delivered an infinite number of times. This
+network, such that it will be delivered an infinite number of
+times.\footnote{This approach is due to Martin Kleppman over e-mail, but can
+also be found in the literature, for eg.,~\citet{shapiro11}.} This
 resolves the eventual delivery problem since we assumed a sufficient (but
 weaker) condition of the underlying network, and then showed it is possible to
 implement eventual delivery on top of these network semantics.
@@ -309,21 +309,22 @@ any states $s_1$, $s_2$, and $s_3$, that:
 \end{itemize}
 
 These mathematical properties correspond to real-world constraints that often
-arise naturally in the area of distributed systems. Take, for example, that
-messages may occur out of order. This often happens in, for example, UDP (User
-Datagram Protocol) networks, where the received datagrams are not guaranteed to
-be in the order that they were sent. Because $\sqcup$ is commutative, replicas
-joining the updates of other replicas do not need to receive those updates in
-order, because the result of $s_1 \sqcup s_2$ is the same as $s_2 \sqcup s_1$.
-That is, it does not matter which of two updates from another replica arrives
-first, because the result is the same no matter in which order they are
-delivered.
+arise naturally in the area of distributed systems. We provide examples for each
+of these three properties below:
 
-\paragraph{Commutativity}
+\paragraph{Commutativity} Take, for example, that messages may occur out of
+order. This often happens in, for example, UDP (User Datagram Protocol)
+networks, where the received datagrams are not guaranteed to be in the order
+that they were sent. Because $\sqcup$ is commutative, replicas joining the
+updates of other replicas do not need to receive those updates in order, because
+the result of $s_1 \sqcup s_2$ is the same as $s_2 \sqcup s_1$.  That is, it
+does not matter which of two updates from another replica arrives first, because
+the result is the same no matter in which order they are delivered.
+
 For concreteness, say that we have two replicas, $r_1$ and $r_2$. $r_1$
 initially begins at state $s$, and $r_2$ progresses through states $s_1, \ldots,
 s_n$ for $n > 0$. We then see that it does not matter the order in which these
-updates are delivered to $r_1$. Suppose that we have a mapping $\pi : [n] \to
+updates are delivered to $r_1$. Suppose that we have a bijection $\pi : [n] \to
 [n]$ which maps the true order of a state $s_i$ to the order in which it was
 delivered. Then, we can see that the choice of $\pi$ is arbitrary, because:
 \[
@@ -336,28 +337,27 @@ for any choice of $\pi$, because
 which follows from the fact that $\sqcup$ is commutative. This can be shown
 inductively on the number of updates, $n$, given the commutativity of $\sqcup$.
 
-\paragraph{Idempotency}
-Next, it is often common for packets to be duplicated in transit over a network.
-That is, even though a packet may be sent from a source only once, it may be
-received by a recipient on the same network multiple times. For this, the
-idempotency of $\sqcup$ comes in handy: no matter how many times a state is
-broadcast from an evolving replica, any other replica on the network will
-tolerate that set of messages, because it only requires the message to be
+\paragraph{Idempotency} Next, it is often common for packets to be duplicated in
+transit over a network.  That is, even though a packet may be sent from a source
+only once, it may be received by a recipient on the same network multiple times.
+For this, the idempotency of $\sqcup$ comes in handy: no matter how many times a
+state is broadcast from an evolving replica, any other replica on the network
+will tolerate that set of messages, because it only requires the message to be
 delivered once. Any additional duplicates are merged in without changing the
 state.
 
-\paragraph{Associativity}
-Finally, associativity is an appealing property, too, although its applications
-are both less immediate and less often-used in this thesis. Suppose that several
-replicas of a state-based \CRDT reside on a network with, say, high latency, or
-it is otherwise undesirable to send more messages on the network than is
-necessary. Because associativity implies that the grouping of updates is
-arbitrary, a replica can maintain a \textit{set} of pending updates, and
-periodically\footnote{``Periodically'' is arbitrary and is left up to the
-implementation, but it would be easy to imagine that this could be interpreted
-as whenever the set reaches a certain size, and/or after a certain amount of
-time has passed since flushing the set of pending updates.} send that set to
-other replicas by first folding $\sqcup$ over it and sending a single update.
+\paragraph{Associativity} Finally, associativity is an appealing property, too,
+although its applications are both less immediate and less often-used in this
+thesis. Suppose that several replicas of a state-based \CRDT reside on a network
+with, say, high latency, or it is otherwise undesirable to send more messages on
+the network than is necessary. Because associativity implies that the grouping
+of updates is arbitrary, a replica can maintain a \textit{set} of pending
+updates, and periodically send that set to other replicas by first folding
+$\sqcup$ over it and sending a single update.\footnote{``Periodically'' is
+arbitrary and is left up to the implementation, but it would be easy to imagine
+that this could be interpreted as whenever the set reaches a certain size,
+and/or after a certain amount of time has passed since flushing the set of
+pending updates.}
 
 \section{op-based \CRDTs}
 \label{sec:op-based-crdts}

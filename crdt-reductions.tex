@@ -1,11 +1,14 @@
 \chapter{\CRDT reductions}
 \label{chap:crdt-reductions}
 
-This chapter outlines a key component of our proof strategy, which is a pair of
-reductions that allow us to view state- and $\delta$-state based \CRDTs as
-refinements of op-based \CRDTs. The first reduction serves as a standard
-example of how to convert between \CRDT variants. The latter reduction is used
-in and guides our mechanized proofs (Chapter~\ref{chap:example-crdts}).
+This chapter outlines the key component of our proof strategy. We state a
+reduction that allows us to covert from $\delta$-state to op-based \CRDTs. This
+reduction is used extensively in our mechanized proofs
+(Chapter~\ref{chap:example-crdts}). To motivate this reduction's explanation, we
+first state an example reduction from pure state-based \CRDTs to op-based
+\CRDTs. This reduction is also used in mechanized proofs that examples of
+state-based \CRDTs achieve \SEC, but not in the mechanized proofs related to
+$\delta$-state based \CRDTs.
 
 Specifically, we will discuss the following:
 \begin{itemize}
@@ -81,8 +84,7 @@ represent the same set of query-able states using simpler structures. For
 example, state-based counters (such as the $\textsf{G-Counter}_s$ and
 $\textsf{PN-Counter}_s$) often use a vector representation to represent the
 number of ``increment'' operations at each node, but op-based counters often
-instead use scalars (c.f., the examples in
-Section~\label{sec:example-gcounter}).
+instead use scalars (cf., the examples in Section~\ref{sec:example-gcounter}).
 
 In order to make $\phi$ a simple reduction, we allow the state spaces of the
 \CRDT before and after the reduction to be identical. Though \CRDT designers can
@@ -251,4 +253,4 @@ Maxim~\ref{maxim:delta-as-op}, which we restate here for clarity:
 Therefore, we have a straightforward procedure for reasoning about
 $\delta$-state \CRDTs in terms of op-based \CRDTs, which is to convert any
 $\delta$-state \CRDT into an op-based \CRDT, and then use the existing framework
-of~\citet{gomes17} to mechanize that that \CRDT does or does not achieve \SEC.
+of~\citet{gomes17} to mechanize that that \CRDT achieves \SEC.
