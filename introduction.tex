@@ -46,7 +46,7 @@ describe the preliminaries necessary to contextualize the body of this work in
 the following section.
 
 \section{Preliminaries}
-Our discussion here focuses on the class of \CRDTs, which are designed to be
+Our discussion here focuses on \CRDTs, which are designed to be
 both easily distributed and require relatively low coordination overhead by
 allowing individual participants to diverge temporarily from the state of the
 overall computation. That is, the computation reflects a different value
@@ -54,9 +54,9 @@ depending on which participant in the computation responds to the request.
 
 These datatypes operate in such a way so as to both avoid conflict between
 concurrent updates, and to avoid locking and coordination
-overhead~\citep{shapiro11}. \CRDTs have seen moderate use in industry, too.
-Based on introspection of the runtime headers in iOS, Apple is believed to use a
-state-based \CRDT for offline synchronization of content in their note-taking
+overhead~\citep{shapiro11}. \CRDTs have seen moderate use in industry.
+Based on introspection of the runtime headers in iOS, Apple is believed to use
+\CRDTs for offline synchronization of content in their note-taking
 app, Notes~\citep{applenotes}.  Redis, a popular open-source distributed cache
 uses \CRDTs in their Enterprise offering to perform certain kinds of replication
 and conflict-resolution~\citep{redis}.
@@ -88,11 +88,8 @@ eventual- and strong eventual consistency from~\cite{shapiro11}.
 
 Broadly speaking, there are two classes of \CRDTs, which we refer to as the op-
 and state-based variants. We will provide formal definitions for each of the two
-classes in Chapter~\ref{chap:background}, but will describe each class
-informally below.
-
-We now present brief definitions of op- and state-based \CRDTs based
-on~\citet{baquero14} and~\citet{shapiro11}:
+classes in Chapter~\ref{chap:background}. We now present brief definitions of
+op- and state-based \CRDTs based on~\citet{baquero14} and~\citet{shapiro11}:
 
 \begin{definition}[Operation-based Conflict-Free Replicated Datatype (op-based
 \CRDT)]
@@ -143,7 +140,7 @@ to send a notification of a single update (typically the representation
 generated in the \textit{prepare} stage is dwarfed by the typical payload size
 of a state-based \CRDT), but in exchange demand that the network deliver
 messages in-order for sequential (comparable) updates and
-at-most-once~\citep{shapiro11}.
+at-most-once delivery~\citep{shapiro11}.
 
 Significant work in this area (\cite{almedia18, enes18, cabrita17,
 vanDerLinde16}) has focused on mediating these two extremes. This line of
@@ -166,7 +163,9 @@ places interest in studying their convergence properties.
 
 Our main contribution builds on the work in~\citet{gomes17} and introduces a set
 of formally verified, machine-checked proofs in Isabelle~\citep{wenzel02} of the
-main result in~\citet{almedia18}, which we re-state below:
+main result in~\citet{almedia18}, which we re-state below:\footnote{The source
+of our proofs is available for free at:
+\url{https://github.com/ttaylorr/thesis}.}
 
 \begin{theorem}[Almedia, Shoker, Baquero, '18]
   Consider a set of replicas of a $\delta$-\CRDT object, replica $i$ evolving
@@ -196,11 +195,9 @@ $\delta$-state encodings. Our key idea guiding these verification efforts is to
 treat op- and state-based \CRDTs similarly by modeling state-based \CRDTs as
 op-based where the operation is the join provided by the
 semi-lattice.\footnote{This approach is described in detail in
-Section~\ref{sec:state-as-op}.} We show that the
-$\isa{strong}{\isacharunderscore}\isa{eventual}{\isacharunderscore}\isa{consistency}$
-locale can still be instantiated over these \CRDTs, even when the underlying
-$\isa{network}$ locale has been weakened substantially from when it was
-introduced in the aforementioned work.
+Section~\ref{sec:state-as-op}.} We show that \SEC is preserved in these \CRDTs,
+even when the underlying $\isa{network}$ interface has been weakened
+substantially from when it was introduced in the aforementioned work.
 
 The remainder of this thesis is ordered as follows:
 \begin{itemize}

@@ -61,17 +61,18 @@ definition:
 
 Notice that the state space $\mathbb{N}^{|\mathcal{I}|}_0$ does not match the
 return type of the query function, $q$, which is simply $\mathbb{N}_0$. In
-Figure~\ref{fig:state-gcounter}, we utilize a \emph{vector} counter, which
-should be familiar to readers acquainted with \emph{vector
-clocks}~\citep{lamport78}.\footnote{Unlike traditional vector clocks, the vector
-\emph{counter} only stores in each replica's slot the number of \textsf{inc}
-operations performed \emph{at that replica}.}
+Figures~\ref{fig:state-gcounter} and~\ref{fig:state-gcounter-vec-example}, we
+utilize a \emph{vector} counter, which should be familiar to readers acquainted
+with \emph{vector clocks}~\citep{lamport78}.\footnote{Unlike traditional vector
+clocks, the vector \emph{counter} only stores in each replica's slot the number
+of \textsf{inc} operations performed \emph{at that replica}.}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=.6\textwidth]{figures/vector-state.pdf}
-    \caption{A correct execution of vector-based state G-Counters exchanging
-      updates.}
+  \caption{A correct execution of vector-based state G-Counters exchanging
+    updates.}
+  \label{fig:state-gcounter-vec-example}
 \end{figure}
 
 When an \textsf{inc} is invoked at the $i$th replica, it updates its own state

@@ -1,14 +1,13 @@
 \chapter{\CRDT reductions}
 \label{chap:crdt-reductions}
 
-This chapter outlines the key component of our proof strategy. We state a
-reduction that allows us to covert from $\delta$-state to op-based \CRDTs. This
-reduction is used extensively in our mechanized proofs
-(Chapter~\ref{chap:example-crdts}). To motivate this reduction's explanation, we
-first state an example reduction from pure state-based \CRDTs to op-based
-\CRDTs. This reduction is also used in mechanized proofs that examples of
-state-based \CRDTs achieve \SEC, but not in the mechanized proofs related to
-$\delta$-state based \CRDTs.
+This chapter outlines the key component of our proof strategy. We begin with a
+reduction allowing us to convert from state- to op-based \CRDTs. This reduction
+is used in Chapter~\ref{chap:example-crdts} to show a preliminary encoding of
+two state-based \CRDTs. We conclude with a reduction from $\delta$-state to
+op-based \CRDTs, which is used extensively in the latter part of
+Chapter~\ref{chap:example-crdts} to show that $\delta$-state \CRDTs achieve
+\SEC.
 
 Specifically, we will discuss the following:
 \begin{itemize}
@@ -41,9 +40,9 @@ will return to them in Sections~\ref{sec:state-as-op} and~\ref{sec:delta-as-op}.
 \label{sec:state-as-op}
 
 This section describes a reduction from state-based \CRDTs to op-based \CRDTs.
-We describe this reduction to exemplify how to reduce between \CRDT classes, but
-this reduction is ultimately not used in our mechanized proofs, since we do not
-reason about state-based \CRDTs explicitly.
+We describe this reduction to exemplify how to reduce between \CRDT classes, and
+use this in Chapter~\ref{chap:example-crdts} to show that two state-based \CRDTs
+achieve \SEC.
 
 Consider some state-based \CRDT $C = (S, s^0, q, u, m)$. This object $C$ has a
 set of states $S$, an initial state $s^0$, along with functions for querying the
@@ -78,7 +77,7 @@ $s^0$ and $q$) separately from how it maps the update procedure $u$.
 Let us begin our discussion with a consideration to how $\phi$ maps the state
 $S$ from a state-based \CRDT to an op-based one. In practice, it would be
 unrealistic to treat the state space of a state-based \CRDT as equal to that of
-its op-based counter-part. Doing so would discard one of the key benefits of
+its op-based counterpart. Doing so would discard one of the key benefits of
 op-based \CRDTs over state-based ones, which is that they are often able to
 represent the same set of query-able states using simpler structures. For
 example, state-based counters (such as the $\textsf{G-Counter}_s$ and
