@@ -8,6 +8,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage[]{hyperref}
 \usepackage[square,sort,comma,numbers]{natbib}
 \usepackage{xcolor}
 \usepackage{xspace}
@@ -21,17 +22,24 @@
 \newcommand*{\SEC}{\textsf{SEC}\xspace}
 
 \setbeamercovered{transparent}
+\usetheme{CambridgeUS}
+\usecolortheme{dolphin}
 
+\setcitestyle{authoryear}
 
-\bibliography{bibliography.bib}
+\hypersetup{%
+  pdfborder={0 0 0},colorlinks=true,citecolor=purple,linkcolor=
+}
 
-\title{Verifying Strong Eventual Consistency in $\delta$-\CRDTs}
+\title{Verifying Strong Eventual Consistency\\ in $\delta$-\CRDTs}
 \author{Taylor Blau}
 \institute{University of Washington}
-\date{June 2020}
+\date{June, 2020}
 
 \begin{document}
   \frame{\titlepage}
+
+  \section{Introduction}
 
   \begin{frame}
     \frametitle{Contributions}
@@ -66,7 +74,10 @@
     \end{itemize}
   \end{frame}
 
+  \section{Motivation}
+
   \begin{frame}
+    \frametitle{Distributed Systems}
     Why distributed systems?
     \begin{enumerate}
       \item \emph{Resiliency}. Tolerates failure of any one (or more)
@@ -76,5 +87,419 @@
       \item \emph{Locality}. Service requests to varied locations by placing
         hardware close to where requests originate.
     \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Distributed Consensus Algorithms}
+    \begin{definition}[Distributed Consensus Algorithm,~\citet{howard20}]
+      An algorithm is said to solve distributed consensus if it has the following
+      three safety requirements:
+      \begin{enumerate}
+        \item<2-> \emph{Non-triviality}: The decided value must have been proposed by a
+          participant.
+        \item<3-> \emph{Safety}: Once a value has been decided, no other value will be
+          decided.
+        \item<4-> \emph{Safe learning}: If a participant learns a value, it must learn
+          the decided value.
+      \end{enumerate}
+      In addition, it must satisfy the following two progress requirements:
+      \begin{enumerate}
+        \item<5-> \emph{Progress}: Under previously agreed-upon liveness conditions, if
+          a value is proposed by a participant, then a value is eventually decided.
+        \item<6-> \emph{Eventual learning}: Under the same conditions as above, if a
+          value is decided, then that value must be eventually learned.
+      \end{enumerate}
+    \end{definition}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Distributed Consensus Algorithms}
+    Two of the most popular algorithms in this field:
+    \begin{itemize}
+      \item Paxos~\citep{lamport98}
+      \item Raft~\citep{ongaro14}
+    \end{itemize}
+    \pause
+    ...are notoriously difficult to implement in practice~\citep{howard20}.
+    \begin{itemize}
+      \item<3-> Often the subject of advanced undergraduate-level courses in
+        Distributed Systems (CSE 452).
+      \item<4-> Subject of much mechanized verification
+        effort~\citep{wilcox15,woos16}.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Distributed Consensus Algorithms}
+    Why?
+    \pause
+    ...one possible answer: \emph{safety}.
+    \begin{enumerate}[<+->]
+      \item Coordinating a shared value between multiple replicas is difficult.
+      \item Unreliable networks make this task even more difficult.
+      \item Ensuing that all nodes learn the same value makes this even more
+        difficult still.
+    \end{enumerate}
+  \end{frame}
+
+  \section{Background}
+  \subsection{Consistency Classes}
+  \begin{frame}
+    \frametitle{Eventual Consistency}
+    Eventual consistency captures the informal notion that if all clients stop
+    submitting updates to the system, all replicas in the system eventually
+    reach the same value.
+
+    \pause
+
+    More formally:
+    \begin{definition}[Eventual Consistency~\citep{shapiro11}]
+      \begin{enumerate}[<+->]
+        \item \emph{Eventual delivery}. An update delivered at some correct
+          replica is eventually delivered at all replicas.
+          \[
+            \forall r_1, r_2.\, f \in (\textsf{delivered}~r_1) \Rightarrow
+              \Diamond f \in (\textsf{delivered}~r_2)
+          \]
+        \item \emph{Convergence}. Correct replicas which have received the same
+          \emph{set} of updates eventually reflect the same state.
+          \[
+            \forall r_1, r_2.\,~\square~(\textsf{delivered}~r_1) =
+            (\textsf{delivered}~r_2) \Rightarrow \Diamond~\square~q(r_1) =
+            q(r_2)
+          \]
+        \item \emph{Termination}. All method executions terminate.
+      \end{enumerate}
+    \end{definition}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Shortcomings of Eventual Consistency}
+
+    \EC is a relatively weak form of consistency:
+
+    \begin{enumerate}[<+->]
+      \item \EC systems will sometimes execute an update immediately only to
+        discover that it produces a conflict with some future update, and so
+        frequent roll-backs may be performed~\citep{shapiro11}.
+      \item \EC is merely a liveness guarantee. It does not impose any
+        restriction on nodes which have received the same set or even sequence
+        of messages.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Strong Eventual Consistency}
+
+    \begin{definition}[Strong Eventual Consistency~\citep{shapiro11}]
+      \begin{enumerate}[<+->]
+        \item The system is \EC, per above guidelines.
+        \item \emph{Strong convergence}. Any pair of replicas which have
+          received the same set of messages must return the same value when
+          queried immediately.
+          \[
+            \forall r_1, r_2.\, (\textsf{delivered}~r_1) =
+              (\textsf{delivered}~r2) \Rightarrow q(r_1) = q(r_2)
+          \]
+      \end{enumerate}
+    \end{definition}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Strong Eventual Consistency}
+
+    Why is \SEC an appealing model?
+    \begin{itemize}[<+->]
+      \item No requirements on replicas which have not received the same
+        sequence/set of updates.
+      \item Trade linearizability for the ability to let replicas drift.
+      \item Allow replicas which haven't yet received all updates to return an
+        earlier value of the computation.
+    \end{itemize}
+
+    \pause
+    Practical (in certain applications): offline synchronization, Facebook
+    ``like'' counters, Cassandra, Redis, etc.
+  \end{frame}
+
+  \subsection{Conflict-free Replicated Datatypes}
+  \begin{frame}
+    \frametitle{Conflict-free Replicated Datatypes}
+
+    \CRDTs are a class of replicated datatypes which implement
+    \SEC~\cite{shapiro11}. There exist two broad classes:
+    \begin{enumerate}[<+->]
+      \item State-based \CRDTs. States form a join lattice, progress is made by
+        sharing states with other replicas and merging with local state.
+      \item Operation-based \CRDTs. Operations are serialized and delivered to
+        all replicas in order.
+    \end{enumerate}
+  \end{frame}
+
+  \subsection{state-based \CRDTs}
+  \begin{frame}
+    \frametitle{State-based \CRDTs}
+
+    A state-based \CRDT is a 5-tuple $(S, s^0, q, u, m)$:
+    \begin{enumerate}
+      \item Individual \CRDT replicas each have some state $s^i \in S$ for $i
+        \ge 0$, and is initially $s^0$.
+      \item The value may be queried by any client or other replica by invoking
+        $q$.
+      \item It may be updated with $u$, which has a unique type per \CRDT
+        object.
+      \item Finally, $m$ merges the state of some other remote replica.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example state-based \CRDT}
+
+    Grow-only counter: increments a (grow-only) shared value over time, supports
+    queries of the last-known value.
+    \[
+      \textsf{G-Counter}_s = \left\{\begin{aligned}
+        S &: \mathbb{N}_0^{|\mathcal{I}|} \\
+        s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
+        q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+        u &: \lambda s,i.\, s\left\{ i \mapsto s(i) + 1 \right\} \\
+        m &: \lambda s_1, s_2.\, \left[ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+        \mathsf{dom}(s_2) \right]
+      \end{aligned}\right.
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{state-based properties}
+
+    \begin{enumerate}[<+->]
+      \item Crucially, the states of a given state-based \CRDT form a
+        partially-ordered set $\langle S, \sqsubseteq \rangle$. This poset is
+        used to form a join semi-lattice, where any finite subset of elements
+        has a natural least upper-bound.
+
+      \item For every state-based \CRDT whose states $S$ form some join
+        semi-lattice (with join operator $\sqcup$), we assume that:
+        \[
+          m(s_1, s_2) = s_1 \sqcup s_2
+        \]
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{state-based properties of $\sqcup$}
+
+    $\sqcup$ must satisfy three mathematical identities:
+    \begin{itemize}
+      \item<2-> The operator is \emph{commutative}, i.e., that $s_1 \sqcup s_2 = s_2
+        \sqcup s_1$, or that order does not matter.
+      \item<3-> The operator is \emph{idempotent}, i.e., that $(s_1 \sqcup s_2)
+        \sqcup s_2 = s_1 \sqcup s_2$, or that repeated updates reach a fixed point.
+      \item<4-> Finally, the operator is \emph{associative}, i.e., that $s_1 \sqcup (s_2
+        \sqcup s_3) = (s_1 \sqcup s_2) \sqcup s_3$, or that grouping of arguments
+        does not matter.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{state-based properties of $\sqcup$}
+    ...why place these restrictions on $\sqcup$? Because:
+    \begin{itemize}[<+->]
+      \item<2-> Commutativity means that updates can be delivered from other
+        replicas in any order.
+      \item<3-> Idempotency means that updates can be delivered any number of times
+        without changing the effect.
+      \item<4-> Associativity means that updates can be applied in any grouping
+        (useful for causality-preserving \CRDTs, but not studied further here).
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example state-based \CRDT}
+
+    Grow-only counter: increments a (grow-only) shared value over time, supports
+    queries of the last-known value.
+    \[
+      \textsf{G-Counter}_s = \left\{\begin{aligned}
+        S &: \mathbb{N}_0^{|\mathcal{I}|}~\onslide<2->{\text{%
+          \color{red}
+          Each element in the lattice a vector of naturals.
+        }} \\
+        s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
+        q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+        u &: \lambda s,i.\, s\left\{ i \mapsto s(i) + 1 \right\} \\
+        m &: \lambda s_1, s_2.\, \left[ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+        \mathsf{dom}(s_2) \right] \\
+          &~\onslide<3->{\text{%
+            \color{red}
+            Least upper bound $\sqcup$ defined by the element-wise maximum.
+          }}
+      \end{aligned}\right.
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example state-based \CRDT}
+
+    Grow-only set: replicated monotonic (supports $\cup$, but not $\setminus$)
+    set, query $q$ defines a unary relation over items in the set.
+    \[
+      \textsf{G-Set}_s(\mathcal{X}) = \left\{\begin{aligned}
+        S &: \mathcal{P}(\mathcal{X})~\onslide<2->{\text{%
+          \color{red}
+          Each element in the latice is some subset of $\mathcal{X}$.
+        }} \\
+        s^0 &: \{ \} \\
+        q &: \lambda x.\, x \in s \\
+        u &: \lambda x.\, s \cup \{ x \}~\onslide<2->{\text{%
+          \color{red}
+          The set is updated by replacing the current set with the union.
+        }} \\
+        m &: \lambda s_1, s_2.\, s_1 \cup s_2~\onslide<3->{\text{%
+          \color{red}
+          The union of sets defines a least-upper bound in the lattice.
+        }} \\
+      \end{aligned}\right.
+    \]
+
+    \pause
+
+    The lattice-of-sets (for some family of items $\mathcal{X}$) is
+    $\langle \mathcal{P}(\mathcal{X}), \subseteq \rangle$, and the least-upper
+    bound is defined by $\cup$.
+  \end{frame}
+
+  \subsection{op-based \CRDTs}
+  \begin{frame}
+    \frametitle{op-based \CRDTs}
+
+    An op-based \CRDT is a $6$-tuple $(S, s^0, q, t, u, P)$.
+
+    \begin{itemize}[<+->]
+      \item $S$, $s^0$, and $q$ retain the same meaning as for the state-based
+        \CRDTs.
+      \item $S$ need not necessairly form a semi-lattice.
+      \item Operations are communicated instead of state. To deliver an
+        operation:
+        \begin{enumerate}[<+->]
+          \item The \textit{prepare-update} implementation $t$ is applied at the
+            locally to prepare a representation of the operation.
+          \item The \textit{effect-update} implementation $u$ is applied at the
+            local and remote replicas if and only if the delivery precondition
+            $P$ is met, causing the desired update to take effect.
+        \end{enumerate}
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example op-based \CRDT}
+
+    To illustrate the difference between state- and op-based \CRDTs, here the
+    analogue to $\textsf{G-Set}_s$:
+    \[
+      \textsf{G-Set}_o(\mathcal{X}) = \left\{\begin{aligned}
+        S &: \mathcal{P}(\mathcal{X}) \\
+        s^0 &: \{ \} \\
+        q &: \lambda x.\, x \in s \\
+        t &: \lambda x.\, (\textsf{ins}, x)~\onslide<2->{\text{%
+          \color{red}
+          \emph{Representation} of the operation.
+        }} \\
+        u &: \lambda p.\, s \cup \{(\textsf{snd}~p)\}~\onslide<3->{\text{%
+          \color{red}
+          \emph{Application} of the operation.
+        }} \\
+        m &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
+      \end{aligned}\right.
+    \]
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example op-based \CRDT}
+
+    To illustrate the difference between state- and op-based \CRDTs, here the
+    analogue to $\textsf{G-Counter}_s$:
+    \begin{columns}
+      \begin{column}{.5\textwidth}
+        \onslide<1,3>{
+          \[
+            \textsf{G-Counter}_o' = \left\{\begin{aligned}
+              S &: \mathbb{N}_0^{|\mathcal{I}|} \\
+              s^0 &: [ 0, 0, \cdots, 0 ] \\
+              q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+              t &: (\textsf{inc}, i) \\
+              u &: \lambda s,p.\, s\{ i \mapsto s(i) + 1 \} \\
+            \end{aligned}\right.
+          \]
+        }
+      \end{column}
+      \begin{column}{.5\textwidth}
+        \onslide<2->{%
+          \[
+            \textsf{G-Counter}_o = \left\{\begin{aligned}
+              S &: \mathbb{N}_0 \\
+              s^0 &: 0 \\
+              q &: \lambda s.\, s \\
+              t &: \textsf{inc} \\
+              u &: \lambda s,p.\, s + 1 \\
+            \end{aligned}\right.
+          \]
+        }
+      \end{column}
+    \end{columns}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{op- and state-based trade-offs}
+    \begin{itemize}[<+->]
+      \item state-based \CRDTs are resilient to degenerate network behaviors,
+        such as delaying, dropping, and reordering messages in transit, but
+        suffer from large payload size
+      \item op-based \CRDTs have relatively small payload size, but require that
+        the network deliver messages at-most-once
+    \end{itemize}
+    \pause
+    Is there a middle ground?
+  \end{frame}
+
+  \section{$\delta$-state \CRDTs}
+  \begin{frame}
+    \frametitle{$\delta$-state \CRDTs}
+    Like state-based \CRDTs, a $\delta$-state \CRDT is a $5$-tuple: $(S, s^0, q,
+    u^\delta, m^\delta)$~\citep{almeida18}.
+    \begin{itemize}
+      \item $u^\delta$ produces an \emph{$\delta$-mutation}, which is
+        representative of the update.
+      \item $m^\delta$ is capable of merging a state $s \in S$ with the
+        $\delta$-mutation produced by $u^\delta$.
+    \end{itemize}
+    Goal: the size of a $\delta$ mutation should be smaller than the state.
+  \end{frame}
+
+  \begin{frame}
+  \frametitle{Example $\delta$-state \CRDT}
+    \[
+      \textsf{G-Set}_{\alt<1>{s}{\delta}}(\mathcal{X}) = \left\{\begin{aligned}
+        S &: \mathcal{P}(\mathcal{X}) \\
+        s^0 &: \{ \} \\
+        q &: \lambda x.\, x \in s \\
+        u^{\only<2>{\delta}} &: \lambda x.\, \only<1>{s \cup} \{ x \} \\
+        m^{\only<2>{\delta}} &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
+      \end{aligned}\right.
+    \]
+    \pause
+  \end{frame}
+
+  \begin{frame}
+    \centering
+    \huge{Thank you!}
+
+    \pause
+    Questions?
+  \end{frame}
+
+  \begin{frame}[allowframebreaks]
+    \bibliographystyle{abbrvnat}
+    \bibliography{../../thesis.bib}
   \end{frame}
 \end{document}
