@@ -21,6 +21,11 @@
 \newcommand*{\EC}{\textsf{EC}\xspace}
 \newcommand*{\SEC}{\textsf{SEC}\xspace}
 
+\newcommand*{\fst}{\textsf{fst}\xspace}
+\newcommand*{\snd}{\textsf{snd}\xspace}
+
+\newtheorem{maxim}{Maxim}[theorem]
+
 \setbeamercovered{transparent}
 \usetheme{CambridgeUS}
 \usecolortheme{dolphin}
@@ -466,7 +471,7 @@
   \begin{frame}
     \frametitle{$\delta$-state \CRDTs}
     Like state-based \CRDTs, a $\delta$-state \CRDT is a $5$-tuple: $(S, s^0, q,
-    u^\delta, m^\delta)$~\citep{almeida18}.
+    u^\delta, m^\delta)$~\citep{almedia18}.
     \begin{itemize}
       \item $u^\delta$ produces an \emph{$\delta$-mutation}, which is
         representative of the update.
@@ -477,17 +482,312 @@
   \end{frame}
 
   \begin{frame}
-  \frametitle{Example $\delta$-state \CRDT}
+    \frametitle{Example $\delta$-state \CRDT}
+    Recall the original state-based G-Set, and consider how it might be
+    represented as a $\delta$-state \CRDT:
+
     \[
       \textsf{G-Set}_{\alt<1>{s}{\delta}}(\mathcal{X}) = \left\{\begin{aligned}
         S &: \mathcal{P}(\mathcal{X}) \\
         s^0 &: \{ \} \\
         q &: \lambda x.\, x \in s \\
-        u^{\only<2>{\delta}} &: \lambda x.\, \only<1>{s \cup} \{ x \} \\
-        m^{\only<2>{\delta}} &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
+        u^{\only<2->{\delta}} &: \lambda x.\, \only<1>{s \cup} \{ x \} \\
+        m^{\only<2->{\delta}} &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
       \end{aligned}\right.
     \]
     \pause
+    \pause
+    Observe that both $u : S \to S \to S$ and $u^\delta : S \to S \to S$.
+    \begin{itemize}[<+(1)->]
+      \item Standard requirement from~\citet{almedia18} (they let $S$ for the
+        G-Counter be $S : \mathcal{I} \hookrightarrow \mathbb{N}$).
+      \item Not a requirement in this work.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Example $\delta$-state \CRDT (G-Counter)}
+
+    Let's consider the state- and $\delta$-state encodings of the G-Counter:
+    \pause
+    \[
+      \textsf{G-Counter}_{\alt<1-2>{s}{\delta}} = \left\{\begin{aligned}
+        S &: \mathbb{N}_0^{|\mathcal{I}|} \\
+        s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
+        q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
+        u^{\only<3>{\delta}} &: \lambda s,i.\, \only<1-2>{s}\left\{ i \mapsto s(i) + 1 \right\} \\
+        m^{\only<3>{\delta}} &: \lambda s_1, s_2.\, \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+        \mathsf{dom}(s_2) \right\}
+      \end{aligned}\right.
+    \]
+    \pause
+    \text{\color{red}
+      Use the notation $\{ i \mapsto x \}$ to encode an \emph{update} (index,
+      new value) in the vector.
+    }
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{\SEC \& $\delta$-\CRDTs?}
+
+    \begin{enumerate}[<+->]
+      \item We have a ``best-of-both-worlds'' \CRDT: the $\delta$-state \CRDT.
+      \item Small update payload (more like $\mathcal{O}(\text{size of update})$
+        instead of $\mathcal{O}(|\mathcal{I}|)$).
+      \item $m^\delta$ is still elegant: commutative, associative, and
+        idempotent $\Rightarrow$ weak network requirements (opposed to op-based
+        \CRDTs).
+    \end{enumerate}
+
+    \pause
+    Big question: does it satisfy SEC?
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{The rest of the talk}
+    \begin{enumerate}[<+->]
+      \item Answer the question of ``do $\delta$-state \CRDTs achieve \SEC?'' in
+        the affirmative, with a mechanically checked proof.
+      \item Build our proofs on the work of~\citet{gomes17}, verification
+        library in Isabelle/HOL for op-based \CRDTs.
+      \item State two reductions for viewing state- and $\delta$-state based
+        \CRDTs as op-based.
+      \item Overview of our proofs.
+      \item Future directions.
+    \end{enumerate}
+  \end{frame}
+
+  \section{\CRDT reductions}
+  \begin{frame}
+    \frametitle{Reduction I: state- to op-based}
+
+    We have a type mismatch: want to verify properties of $\delta$-state \CRDTs,
+    but library is designed for verifying op-based \CRDTs.
+    \begin{itemize}[<+(1)->]
+      \item Design a reduction from $\delta$-state \CRDTs to op-based.
+      \item Convince ourselves of its correctness.
+      \item Encode $\delta$-state \CRDTs as op-based in Isabelle, write proofs
+        over the \emph{encoded} \CRDTs.
+    \end{itemize}
+    \pause
+    Two reductions: state- to op-based, then $\delta$- to op-based.
+    \begin{itemize}[<+(1)->]
+      \item Call these $\phi_{\text{state} \to \text{op}}$ and $\phi_{\delta
+        \to \text{op}}$, respectively.
+      \item First is a ``warm-up'' to illustrate the general shape of these
+        reductions.
+      \item Latter is the reduction we use in our proofs.
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction I: state- to op-based}
+    Want a reduction of the following form:
+    \[
+      \phi_{\text{state} \to \text{op}} :
+        \underbrace{(S, s^0, q, u, m)}_{\text{state-based \CRDTs}} \longrightarrow
+        \underbrace{(S, s^0, q, t, u, P)}_{\text{op-based \CRDTs}}
+    \]
+    \pause
+    Simple idea:
+    \begin{itemize}[<+->]
+      \item Let state (specifically: $S, s^0, q$) be identical under the
+        reduction.\footnote{Can often be more clever than this (for eg.,
+        op-based G-Counter, but simplifies the reduction.)}
+      \item Let $t$ return the result of (the state-based) $u$.
+      \item Let $u$ perform as (the state-based) $m$.
+      \item Let $P$ be always enabled.
+    \end{itemize}
+    \pause
+    That is: let the op-based reduction of a state-based \CRDT the \CRDT which
+    applies updates by performing a state-based merge.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction I: state- to op-based}
+    \begin{maxim}
+      A state-based \CRDT is an op-based \CRDT where the \emph{prepare-update}
+      phase returns the updated state, and the \emph{effect-update} is a join of
+      two states.
+    \end{maxim}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction I: state- to op-based}
+    Abstract conversion from a state- to op-based \CRDT under $\phi$:
+    \[
+      C_0 = \left\{ \begin{aligned}
+        S_o &: \alert<2>{S} \\
+        s^0_o &: \alert<2>{s^0} \\
+        q_o &: \alert<2>{q} \\
+        t_o &: \alert<3>{\lambda p.\, u(p...)} \\
+        u_o &: \alert<4>{\lambda s_2.\, m(s^t, s_2)} \\
+      \end{aligned} \right.
+    \]
+    \pause
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction II: $\delta$- to op-based}
+    Want a reduction of the following form:
+    \[
+      \phi_{\delta \to \text{op}} :
+        \underbrace{(S, s^0, q, u^\delta, m^\delta)}_{\text{$\delta$-based \CRDTs}}
+        \longrightarrow
+        \underbrace{(S, s^0, q, t, u, P)}_{\text{op-based \CRDTs}}
+    \]
+    \pause
+    General idea:
+    \begin{itemize}[<+->]
+      \item Let $S$ be the type of each state and $T$ be the type of the
+        $\delta$-fragments.
+      \item Let $t : S \to S \to T$ act like the \emph{difference} between
+        successive states.
+      \item Let $u : S \to T \to S$ act like the pseudo-inverse of $t$ which
+        ``unwinds'' the state.
+      \item Let $P$ be always enabled.
+    \end{itemize}
+    \pause
+    That is: let the op-based reduction of a $\delta$-state \CRDT be the \CRDT
+    which applies updates over the \emph{$\delta$-fragments} of a state.
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction II: $\delta$- to op-based}
+    \begin{maxim}
+      A $\delta$-state based \CRDT is an op-based \CRDT whose messages are
+      $\delta$-fragments, and whose operation is a pseudo-join between the
+      current state and the $\delta$ fragment.
+    \end{maxim}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction II: $\delta$- to op-based}
+
+    Example: apply $\phi_{\delta \to \text{op}}$ to the $\delta$-state G-Set.
+
+    Two questions:
+    \begin{enumerate}[<+(1)->]
+      \item What is the $\delta$-fragement between two successive states
+        $\Rightarrow$ what is $t$?
+      \item How to ``join'' a $\delta$-fragment with our current state
+        $\Rightarrow$ what is $u$?
+    \end{enumerate}
+    Two answers:
+    \begin{enumerate}[<+->]
+      \item Set difference.
+      \item Set union.
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction II: $\delta$- to op-based}
+
+    Let's consider how $\phi_{\delta\to\text{op}}$ behaves on the G-Set \CRDT:
+    \pause
+    \[
+      \phi_{\delta\to\text{op}}(\textsf{G-Set}(\mathcal{X})) =
+      \left\{ \begin{aligned}
+        S &: \alert<2>{\mathcal{P}(\mathcal{X})} \\
+        s^0 &: \alert<2>{\{ \}} \\
+        q &: \alert<2>{\lambda x.\, x \in s} \\
+        t &: \alert<3>{\lambda s_1, s_2.\, s_2 \setminus s_1} \\
+        u &: \alert<4>{\lambda s_2.\, s \cup s_2} \\
+      \end{aligned} \right.
+    \]
+    \onslide<5>{%
+      Example of reducing a $\delta$-state \CRDT to an op-based one where the
+      type of the state \emph{and} $\delta$-fragment are the same (ie., $S = T =
+      \mathcal{P}(\mathcal{X})$).
+    }
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Reduction II: $\delta$- to op-based}
+
+    Let's consider how $\phi_{\delta\to\text{op}}$ behaves on the G-Counter \CRDT:
+    \pause
+    \[
+      \phi_{\delta\to\text{op}}(\textsf{G-Counter}) =
+      \left\{ \begin{aligned}
+        S &: \alert<2>{\mathbb{N}_0^{|\mathcal{I}|}} \\
+        s^0 &: \alert<2>{[0, 0, \cdots, 0j]} \\
+        q &: \alert<2>{\lambda.\, \sum_{i \in \mathcal{I}} s(i)} \\
+        t &: \alert<3>{%
+          \min_{\substack{i \in \mathcal{I} \\ s_1[i] \ne
+            s_2[i]}} (i, s_2[i])} \\
+        u &: \alert<4>{\lambda s, t.\, s\{ (\fst~t) \mapsto (\snd~t) \}} \\
+      \end{aligned} \right.
+    \]
+    \onslide<5>{%
+      Example of reducing a $\delta$-state \CRDT to an op-based one where the
+      type of the state \emph{and} $\delta$-fragment are the same (ie., $S = T =
+      \mathcal{P}(\mathcal{X})$).
+    }
+  \end{frame}
+
+  \section{Mechanized \CRDT proofs}
+  \begin{frame}
+    \frametitle{Network relaxation}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based G-Counter}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based G-Set}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{$\delta$-state G-Counter}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{$\delta$-state G-Set}
+  \end{frame}
+
+  \section{Conclusion}
+  \begin{frame}
+    \frametitle{Future work}
+    \begin{enumerate}[<+->]
+      \item Pair type locales; parameterize a proof that combinations of \CRDTs
+        are \SEC.
+        \begin{enumerate}[<+->]
+          \item Immediately: PN-Counter.
+          \item Immediately: 2P-Set.
+        \end{enumerate}
+      \item Pure $\delta$-state encodings.
+        \begin{enumerate}[<+->]
+          \item Anti-entropy algorithms~\citep{almedia18}.
+          \item No delivery precondition.
+        \end{enumerate}
+      \item Proofs of causally consistent $\delta$-state
+        \CRDTs~\citep{almedia18}:
+        \begin{enumerate}[<+->]
+          \item \emph{$\delta$-interval}:
+            \[
+              \Delta^{a,b}_i = \bigsqcup \left\{ d_i^k : k \in [a, b) \right\}
+            \]
+          \item Causal merging condition: Replica $i$ only joins a
+            $\delta$-interval $\Delta^{a,b}_j$ into its own state $X_i$ if: $X_i
+            \sqsupseteq X_j^a$
+        \end{enumerate}
+    \end{enumerate}
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Conclusion}
+
+    \begin{enumerate}[<+->]
+      \item Extended the work of~\citet{gomes17} to mechanize that
+        $\delta$-state \CRDTs~\citep{almedia18} are \SEC.
+      \item Two reductions: $\phi_{\text{state}\to\text{op}}$ and
+        $\phi_{\delta\to\text{op}}$.
+      \item Network relaxations to allow duplication of messages.
+      \item Mechanized proof that two $\delta$-state \CRDTs (G-Counter, G-Set)
+        are \SEC.
+    \end{enumerate}
   \end{frame}
 
   \begin{frame}
