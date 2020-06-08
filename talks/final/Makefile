@@ -8,8 +8,6 @@ endif
 
 final.pdf : final.tex
 	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
-	bibtex $(patsubst %.tex,%,$<)
-	pdflatex -shell-escape "${PREAMBLE} \input{$(patsubst %.tex,%,$<)}"
 
 .PHONY : clean
 clean :
