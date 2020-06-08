@@ -12,6 +12,8 @@
 \usepackage[square,sort,comma,numbers]{natbib}
 \usepackage{xcolor}
 \usepackage{xspace}
+\usepackage{isabelle}
+\usepackage{isabellesym}
 
 \newcommand*{\TODO}[1][]{\text{\color{red} TODO {#1}}}
 
@@ -25,6 +27,27 @@
 \newcommand*{\snd}{\textsf{snd}\xspace}
 
 \newtheorem{maxim}{Maxim}[theorem]
+
+\isabellestyle{it}
+\renewenvironment{isabelle}{%
+  \medbreak\noindent\hspace{\parindent}%
+  \begin{minipage}{\textwidth}% use minipage to prevent page breaks
+  \begin{isabellebody}%
+  \begin{tabbing}%
+}{%
+  \end{tabbing}%
+  \end{isabellebody}%
+  \end{minipage}%
+  \medbreak%
+}
+\def\isadelimtheory{}\def\endisadelimtheory{}
+\def\isatagtheory{}\def\endisatagtheory{}
+\def\isadelimML{}\def\endisadelimML{}
+\def\isatagML{}\def\endisatagML{}
+\def\isafoldML{}
+\def\isadelimproof{}\def\endisadelimproof{}
+\def\isatagproof{}\def\endisatagproof{}
+\def\isafoldproof{}
 
 \setbeamercovered{transparent}
 \usetheme{CambridgeUS}
@@ -54,8 +77,8 @@
       \item Mechanized proofs in Isabelle that two $\delta$-state \CRDTs inhabit
         \SEC.
         \begin{itemize}
-          \item Reuse a library for verifying operation-based \CRDTs of Gomes to
-            reason about $\delta$-state \CRDTs.
+          \item Reuse a library for verifying operation-based \CRDTs of Victor
+            Gomes of Cambridge to reason about $\delta$-state \CRDTs.
           \item Weaken the network model of Gomes' to support duplicated
             messages.
         \end{itemize}
@@ -84,7 +107,7 @@
   \begin{frame}
     \frametitle{Distributed Systems}
     Why distributed systems?
-    \begin{enumerate}
+    \begin{enumerate}[<+->]
       \item \emph{Resiliency}. Tolerates failure of any one (or more)
         participants.
       \item \emph{Scalability}. Meeting the demands of an increased workload as
@@ -142,7 +165,7 @@
     \begin{enumerate}[<+->]
       \item Coordinating a shared value between multiple replicas is difficult.
       \item Unreliable networks make this task even more difficult.
-      \item Ensuing that all nodes learn the same value makes this even more
+      \item Ensuring that all nodes learn the same value makes this even more
         difficult still.
     \end{enumerate}
   \end{frame}
@@ -198,7 +221,7 @@
 
     \begin{definition}[Strong Eventual Consistency~\citep{shapiro11}]
       \begin{enumerate}[<+->]
-        \item The system is \EC, per above guidelines.
+        \item The system is \EC, as previously described.
         \item \emph{Strong convergence}. Any pair of replicas which have
           received the same set of messages must return the same value when
           queried immediately.
@@ -223,8 +246,8 @@
     \end{itemize}
 
     \pause
-    Practical (in certain applications): offline synchronization, Facebook
-    ``like'' counters, Cassandra, Redis, etc.
+    Practical (in certain applications): offline synchronization (iOS Notes),
+    Facebook ``like'' counters, Cassandra, etc.
   \end{frame}
 
   \subsection{Conflict-free Replicated Datatypes}
@@ -414,7 +437,6 @@
           \color{red}
           \emph{Application} of the operation.
         }} \\
-        m &: \lambda s_1, s_2.\, s_1 \cup s_2 \\
       \end{aligned}\right.
     \]
   \end{frame}
@@ -516,8 +538,8 @@
         s^0 &: \left[ 0, 0, \cdots, 0 \right] \\
         q &: \lambda s.\, \sum_{i \in \mathcal{I}} s(i) \\
         u^{\only<3>{\delta}} &: \lambda s,i.\, \only<1-2>{s}\left\{ i \mapsto s(i) + 1 \right\} \\
-        m^{\only<3>{\delta}} &: \lambda s_1, s_2.\, \left\{ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
-        \mathsf{dom}(s_2) \right\}
+        m^{\only<3>{\delta}} &: \lambda s_1, s_2.\, \left[ \max\left\{ s_1(i), s_2(i) \right\}: i \in \mathsf{dom}(s_1) \cup
+        \mathsf{dom}(s_2) \right]
       \end{aligned}\right.
     \]
     \pause
@@ -596,7 +618,7 @@
         op-based G-Counter, but simplifies the reduction.)}
       \item Let $t$ return the result of (the state-based) $u$.
       \item Let $u$ perform as (the state-based) $m$.
-      \item Let $P$ be always enabled.
+      \item Let $P$ always be enabled.
     \end{itemize}
     \pause
     That is: let the op-based reduction of a state-based \CRDT the \CRDT which
@@ -668,12 +690,13 @@
 
     Two questions:
     \begin{enumerate}[<+(1)->]
-      \item What is the $\delta$-fragement between two successive states
+      \item What is the $\delta$-fragment between two successive states
         $\Rightarrow$ what is $t$?
       \item How to ``join'' a $\delta$-fragment with our current state
         $\Rightarrow$ what is $u$?
     \end{enumerate}
     Two answers:
+    \pause
     \begin{enumerate}[<+->]
       \item Set difference.
       \item Set union.
@@ -721,30 +744,300 @@
     \]
     \onslide<5>{%
       Example of reducing a $\delta$-state \CRDT to an op-based one where the
-      type of the state \emph{and} $\delta$-fragment are the same (ie., $S = T =
-      \mathcal{P}(\mathcal{X})$).
+      type of the state \emph{and} $\delta$-fragment are not same (ie., $S =
+      \mathbb{N}_0^{|\mathcal{I}|}$, but $T = ('id, int)$.
     }
   \end{frame}
 
   \section{Mechanized \CRDT proofs}
   \begin{frame}
+    \frametitle{Motivating network relaxations}
+
+    The network model from~\citet{gomes17} is already fairly permissive:
+    \begin{enumerate}[<+->]
+      \item Supports delaying and dropping of messages.
+      \item ...which implies that we can re-order messages on the network.
+    \end{enumerate}
+
+    \pause
+    But, if messages are never \emph{duplicated} we can't be sure that we're
+    exercising the idempotency of $\sqcup$.
+  \end{frame}
+
+  \begin{frame}
     \frametitle{Network relaxation}
+
+    \begin{isabelle}
+    ~~~~~~~~\isakeyword{and}\ \=msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \={\isasymrbrakk}\ \={\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \=\kill
+    \isacommand{locale}\ network\ {\isacharequal}\ node{\isacharunderscore}histories\ history\\
+    ~~~~\isakeyword{for}\>history\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ {\isasymRightarrow}\ {\isacharprime}msg\ event\ list{\isachardoublequoteclose}\ {\isacharplus}\\
+    ~~~~\isakeyword{fixes}\>msg{\isacharunderscore}id\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}msg\ {\isasymRightarrow}\ {\isacharprime}msgid{\isachardoublequoteclose}\\
+    ~~~~\isakeyword{assumes}\ delivery{\isacharunderscore}has{\isacharunderscore}a{\isacharunderscore}cause{\isacharcolon}\\
+    \>\>{\isasymlbrakk}\ {\isachardoublequoteopen}Deliver\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>\>{\isasymrbrakk}\ {\isasymLongrightarrow}\ {\isasymexists}j{\isachardot}\ Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright}{\isachardoublequoteclose}\\
+    ~~~~~~~~\isakeyword{and}\>deliver{\isacharunderscore}locally{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\  Broadcast\ m\ {\isasymsqsubset}\isactrlsup i\ Deliver\ m{\isachardoublequoteclose}\\
+    \onslide<1>{%
+    ~~~~~~~~\isakeyword{and}\>msg{\isacharunderscore}id{\isacharunderscore}unique{\isacharcolon}\ \>{\isasymlbrakk}\ \>{\isachardoublequoteopen}Broadcast\ m{\isadigit{1}}\ {\isasymin}\ set\ {\isacharparenleft}history\ i{\isacharparenright};\\
+    \>\>\>Broadcast\ m{\isadigit{2}}\ {\isasymin}\ set\ {\isacharparenleft}history\ j{\isacharparenright};\\
+    \>\>\>msg{\isacharunderscore}id\ m{\isadigit{1}}\ {\isacharequal}\ msg{\isacharunderscore}id\ m{\isadigit{2}}\ \>{\isasymrbrakk}\ {\isasymLongrightarrow}\ i\ {\isacharequal}\ j\ {\isasymand}\ m{\isadigit{1}}\ {\isacharequal}\ m{\isadigit{2}}{\isachardoublequoteclose}
+    }
+    \end{isabelle}
+    \pause
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{Proof strategy}
+
+    \begin{enumerate}[<+->]
+      \item First, remove the assumption uniqueness assumption.
+      \item Identify the set of broken proofs. In each broken proof, do the
+        following:
+        \begin{enumerate}[<+->]
+          \item Identify the earliest broken proof step.
+          \item Delete it and all proof steps following it.
+          \item Replace the proof body with the term $sorry$.
+        \end{enumerate}
+      \item In any order, consider a proof which ends with $sorry$, and
+        repair the proof.
+    \end{enumerate}
+
+    \pause
+
+    All broken goals were able to be solved with Isabelle's built-in proof
+    search (suggesting that this assumption was not used heavily in the work
+    of~\citet{gomes17}).
   \end{frame}
 
   \begin{frame}
     \frametitle{State-based G-Counter}
+
+    \uncover<1,5>{%
+    \begin{isabellebody}%
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ state{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }
+
+    \uncover<2,5>{%
+    \begin{isabellebody}%
+    \isacommand{fun}\isamarkupfalse%
+    \ option{\isacharunderscore}max\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}int\ option\ {\isasymRightarrow}\ int\ option\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\ \ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}option{\isacharunderscore}max\ {\isacharparenleft}Some\ a{\isacharparenright}\ {\isacharparenleft}Some\ b{\isacharparenright}\ {\isacharequal}\ Some\ {\isacharparenleft}max\ a\ b{\isacharparenright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+    {\isachardoublequoteopen}option{\isacharunderscore}max\ x\ None\ {\isacharequal}\ x{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+    {\isachardoublequoteopen}option{\isacharunderscore}max\ None\ y\ {\isacharequal}\ y{\isachardoublequoteclose}\isanewline
+    \end{isabellebody}%
+    }
+
+    \uncover<3,5>{%
+    \begin{isabellebody}%
+    \isacommand{fun}\isamarkupfalse%
+    \ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ \isanewline
+    \ \ \ \ None\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isadigit{0}}{\isacharparenright}\isanewline
+    \ \ {\isacharbar}\ Some\ c\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isacharparenleft}c\ {\isacharplus}\ {\isadigit{1}}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }
+
+    \uncover<4,5>{%
+    \begin{isabellebody}%
+    \isacommand{fun}\isamarkupfalse%
+    \ gcounter{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}gcounter{\isacharunderscore}op\ theirs\ ours\ {\isacharequal}\ Some\ {\isacharparenleft}{\isasymlambda}\ x{\isachardot}\ option{\isacharunderscore}max\ {\isacharparenleft}theirs\ x{\isacharparenright}\ {\isacharparenleft}ours\ x{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    \endinput
+    }
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{State-based G-Counter}
+
+    A few additional steps omitted here, including:
+    \begin{enumerate}[<+->]
+      \item Proof that concurrent operations commute (ie., can be applied in
+        arbitrary order and the resulting state is unchanged).
+      \item G-Counter convergence: corollary of the above, which states that
+        \emph{all} operations can be applied in any order.
+      \item Commutativity and associativity of option-max (idempotency proof is
+        inferred automatically).
+    \end{enumerate}
+    Then:
+    \pause
+    \vspace{1em}
+    \begin{isabellebody}
+    \isacommand{sublocale}\isamarkupfalse%
+    \ sec{\isacharcolon}\ strong{\isacharunderscore}eventual{\isacharunderscore}consistency\ weak{\isacharunderscore}hb\ hb\ interp{\isacharunderscore}msg\isanewline
+    \ \ {\isachardoublequoteopen}{\isasymlambda}ops{\isachardot}\ {\isasymexists}xs\ i{\isachardot}\ xs\ prefix\ of\ i\ {\isasymand}\ node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs\ {\isacharequal}\ ops{\isachardoublequoteclose}\ {\isachardoublequoteopen}{\isasymlambda}\ x{\isachardot}\ None{\isachardoublequoteclose}
+    \end{isabellebody}
   \end{frame}
 
   \begin{frame}
     \frametitle{State-based G-Set}
+
+    \onslide<1,4,6->{%
+    \begin{isabellebody}%
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ set{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ state{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }
+
+    \onslide<2,4,6->{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}a\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}insert\ a\ as\ {\isacharequal}\ as\ {\isasymunion}\ {\isacharbraceleft}\ a\ {\isacharbraceright}{\isachardoublequoteclose}\isanewline
+    \end{isabellebody}
+    }
+
+    \onslide<3-4,6->{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ gset{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}gset{\isacharunderscore}op\ a\ as\ {\isacharequal}\ Some\ {\isacharparenleft}\ as\ {\isasymunion}\ a\ {\isacharparenright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    }
+
+    \vspace{1em}
+    \onslide<5>{
+    Since we're using Isabelle's built-in set library, no additional substantial
+    proofs required.
+    }
+    \vspace{1em}
+
+    \onslide<6->{
+    \begin{isabellebody}
+    \isacommand{sublocale}\isamarkupfalse%
+    \ sec{\isacharcolon}\ strong{\isacharunderscore}eventual{\isacharunderscore}consistency\ weak{\isacharunderscore}hb\ hb\ interp{\isacharunderscore}msg\isanewline
+    \ \ {\isachardoublequoteopen}{\isasymlambda}ops{\isachardot}\ {\isasymexists}xs\ i{\isachardot}\ xs\ prefix\ of\ i\ {\isasymand}\ node{\isacharunderscore}deliver{\isacharunderscore}messages\ xs\ {\isacharequal}\ ops{\isachardoublequoteclose}\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    }
   \end{frame}
 
   \begin{frame}
     \frametitle{$\delta$-state G-Counter}
+
+    \alt<1>{%
+    \begin{isabellebody}%
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ state{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }{
+    \begin{isabellebody}%
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ int\ option{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}id{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}\alert<2>{{\isacharprime}id\ {\isasymtimes}\ int}{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}%
+    }
+
+    \alt<1-3>{%
+    \begin{isabellebody}%
+    \isacommand{fun}\isamarkupfalse%
+    \ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ \isanewline
+    \ \ \ \ None\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isadigit{0}}{\isacharparenright}\isanewline
+    \ \ {\isacharbar}\ Some\ c\ {\isasymRightarrow}\ st{\isacharparenleft}who\ {\isacharcolon}{\isacharequal}\ Some\ {\isacharparenleft}c\ {\isacharplus}\ {\isadigit{1}}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }{
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ inc\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}id\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    \alert<4>{{\isachardoublequoteopen}inc\ who\ st\ {\isacharequal}\ {\isacharparenleft}who{\isacharcomma}\ {\isacharparenleft}{\isadigit{1}}\ {\isacharplus}\ {\isacharparenleft}case\ {\isacharparenleft}st\ who{\isacharparenright}\ of\ None\ {\isasymRightarrow}\ {\isadigit{0}}\ {\isacharbar}\ Some\ {\isacharparenleft}x{\isacharparenright}\ {\isasymRightarrow}\ x{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline}
+    \end{isabellebody}
+    }
+
+    \only<5->{%
+    \alert<5>{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ op{\isacharunderscore}to{\isacharunderscore}state\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}op{\isacharunderscore}to{\isacharunderscore}state\ {\isacharparenleft}who{\isacharcomma}\ count{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}{\isasymlambda}x{\isachardot}\ if\ x\ {\isacharequal}\ who\ then\ Some\ count\ else\ None{\isacharparenright}{\isachardoublequoteclose}\isanewline
+    \end{isabellebody}
+    }}
+
+    \only<6->{%
+    \alert<6>{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ delta{\isacharunderscore}gcounter{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}id\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}id\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}delta{\isacharunderscore}gcounter{\isacharunderscore}op\ theirs\ ours\ {\isacharequal}\ Some\ {\isacharparenleft}{\isasymlambda}\ x{\isachardot}\ option{\isacharunderscore}max\ {\isacharparenleft}{\isacharparenleft}op{\isacharunderscore}to{\isacharunderscore}state\ theirs{\isacharparenright}\ x{\isacharparenright}\ {\isacharparenleft}ours\ x{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    }}
+
+    \pause
+    \pause
+    \pause
+    \pause
+    \pause
+    \pause
   \end{frame}
 
   \begin{frame}
     \frametitle{$\delta$-state G-Set}
+
+    \alt<1>{
+    \begin{isabellebody}%
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ set{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ operation\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ state{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }{
+    \begin{isabellebody}
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ state\ {\isacharequal}\ {\isachardoublequoteopen}{\isacharprime}a\ set{\isachardoublequoteclose}\isanewline
+    \isacommand{type{\isacharunderscore}synonym}\isamarkupfalse%
+    \ {\isacharparenleft}{\isacharprime}a{\isacharparenright}\ operation\
+    {\isacharequal}\ {\isachardoublequoteopen}\alert<2>{{\isacharprime}a}{\isachardoublequoteclose}
+    \isanewline
+    \end{isabellebody}
+    }
+
+    \alt<1-3>{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}a\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}insert\ a\ as\ {\isacharequal}\ as\ {\isasymunion}\ {\isacharbraceleft}\ a\ {\isacharbraceright}{\isachardoublequoteclose}\isanewline
+    \end{isabellebody}
+    }{
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}a\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}insert\ a\ {\isacharunderscore}\ {\isacharequal}\ \alert<4>{a}\ {\isachardoublequoteclose}\isanewline
+    \end{isabellebody}
+    }
+
+    \alt<1-5>{%
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ gset{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}gset{\isacharunderscore}op\ a\ as\ {\isacharequal}\ Some\ {\isacharparenleft}\ as\ {\isasymunion}\ a\ {\isacharparenright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    }{
+    \begin{isabellebody}
+    \isacommand{fun}\isamarkupfalse%
+    \ delta{\isacharunderscore}gset{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}a\ operation{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}\ {\isasymrightharpoonup}\ {\isacharparenleft}{\isacharprime}a\ state{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+    {\isachardoublequoteopen}delta{\isacharunderscore}gset{\isacharunderscore}op\ a\ as\ {\isacharequal}\ Some\ {\isacharparenleft}\ \alert<6>{as\ {\isasymunion}\ {\isacharbraceleft}\ a\ {\isacharbraceright}}{\isacharparenright}{\isachardoublequoteclose}
+    \end{isabellebody}
+    }
+
+    \pause
+    \pause
+    \pause
+    \pause
+    \pause
+    \pause
   \end{frame}
 
   \section{Conclusion}
